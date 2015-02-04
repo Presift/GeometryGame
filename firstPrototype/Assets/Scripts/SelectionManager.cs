@@ -7,7 +7,18 @@ public class SelectionManager : MonoBehaviour {
 	public TetrisPiece tetris1;
 	public TetrisPiece tetris2;
 
-	public Text comparisonMode;
+	public Text comparisonLabel;
+	Vector3 comparisonLabelPosition;
+
+	public GameObject correctAnswerImage;
+	public GameObject incorrectAnswerImage;
+
+	GameObject feedbackImage;
+
+	bool showFeedback = false;
+
+	public float timeToShowFeedback;
+	float timeShowingFeeback;
 
 	TetrisPiece largerArea;
 	TetrisPiece largerPerimeter;
@@ -20,25 +31,32 @@ public class SelectionManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		comparisonLabelPosition = new Vector3 (0f, -2.5f, 0f);
+		ShowNewProblem ();
 
+		comparisonLabel.text = "choose the shape with the largest " + currentComparison;
 	}
 	
 	// Update is called once per frame
 	void Update () {
 
-		if (Input.GetKeyDown (KeyCode.Space)) 
-			
-		{
-			tetris1.SetUpPieceAndStats( currentLevel );
-			tetris2.SetUpPieceAndStats( currentLevel );
-
-			SetLargerAreaPiece();
-
-			SetLargerPerimeterPiece();
-		}
-
 		ChangeCurrentComparisonFromInput ();
 		ChangeLevel ();
+
+		if (showFeedback)
+		{
+			FeedbackTimer();
+		}
+	}
+
+	void ShowNewProblem()
+	{
+		tetris1.SetUpPieceAndStats( currentLevel );
+		tetris2.SetUpPieceAndStats( currentLevel );
+		
+		SetLargerAreaPiece();
+		
+		SetLargerPerimeterPiece();
 	}
 
 	void ChangeLevel()
@@ -60,11 +78,13 @@ public class SelectionManager : MonoBehaviour {
 		if (Input.GetKeyDown (KeyCode.P)) 
 		{
 			currentComparison = "perimeter";
+			comparisonLabel.text = "choose the shape with the largest " + currentComparison;
 			Debug.Log ("PERIMETER");
 		}
 		if (Input.GetKeyDown (KeyCode.A)) 
 		{
 			currentComparison = "area";
+			comparisonLabel.text = "choose the shape with the largest " + currentComparison;
 			Debug.Log ("AREA");
 		}
 	}
@@ -111,31 +131,75 @@ public class SelectionManager : MonoBehaviour {
 		}
 	}
 
-	public bool IsSelectionCorrect( TetrisPiece selection )
+	public void IsSelectionCorrect( TetrisPiece selection )
 	{
+		Vector3 feedbackPosition;
+
+		if (selection == null) 
+		{
+
+			feedbackPosition = comparisonLabelPosition;
+
+		}
+		else
+		{
+			feedbackPosition = selection.centerPosition;
+		}
+		Debug.Log (feedbackPosition);
+
 		switch ( currentComparison ) 
 		{
-			case "area":
+		case "area":
 			if( selection == largerArea)
 			{
-				Debug.Log ("correct!");
-				return true;
+				feedbackImage = correctAnswerImage;
+	
 			}
-			Debug.Log ("incorrect!");
-			return false;
+			else
+			{
+				feedbackImage = incorrectAnswerImage;
+			}
+
+			break;
 
 		case "perimeter":
 			if( selection == largerPerimeter)
 			{
-				Debug.Log ("correct!");
-				return true;
+				feedbackImage = correctAnswerImage;
+
 			}
-			Debug.Log ("incorrect!");
-			return false;
+			else
+			{
+				feedbackImage = incorrectAnswerImage;
+			}
+			break;
 		}
 
-		Debug.Log ("warning : No matching case");
-		return false;
+		ShowFeedback (feedbackPosition);
+	}
+
+	void ShowFeedback( Vector3 position )
+	{
+		feedbackImage.transform.position = position;
+		feedbackImage.SetActive (true);
+		//start countdown
+		showFeedback = true;
+		timeShowingFeeback = 0;
+	}
+
+	void FeedbackTimer()
+	{
+		if (timeShowingFeeback < timeToShowFeedback) 
+		{
+			timeShowingFeeback += Time.deltaTime;
+		}
+		else
+		{
+			feedbackImage.SetActive( false );
+			showFeedback = false;
+			//prompt new problem
+			ShowNewProblem();
+		}
 	}
 
 	public void EqualButtonPressed ()

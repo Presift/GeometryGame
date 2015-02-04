@@ -78,4 +78,6 @@ public class Tile : MonoBehaviour {
 		sidePerimeters.Add (rightPerimeter);
 		sidePerimeters.Add (bottomPerimeter);
 	}
+
+
 }
