@@ -7,6 +7,8 @@ public class SelectionManager : MonoBehaviour {
 	public TetrisPiece tetris1;
 	public TetrisPiece tetris2;
 
+	public GameManager gameManager;
+
 	public Text comparisonLabel;
 	Vector3 comparisonLabelPosition;
 
@@ -23,10 +25,6 @@ public class SelectionManager : MonoBehaviour {
 	TetrisPiece largerArea;
 	TetrisPiece largerPerimeter;
 
-	int currentLevel = 0;
-	int minLevel = 0;
-	int maxLevel = 3;
-
 	string currentComparison = "area";
 
 	// Use this for initialization
@@ -41,7 +39,7 @@ public class SelectionManager : MonoBehaviour {
 	void Update () {
 
 		ChangeCurrentComparisonFromInput ();
-		ChangeLevel ();
+
 
 		if (showFeedback)
 		{
@@ -51,27 +49,19 @@ public class SelectionManager : MonoBehaviour {
 
 	void ShowNewProblem()
 	{
-		tetris1.SetUpPieceAndStats( currentLevel );
-		tetris2.SetUpPieceAndStats( currentLevel );
+		tetris1.ResetTileTypeCount ();
+		tetris2.ResetTileTypeCount ();
+		tetris1.SetUpPieceAndStats( gameManager.currentLevel );
+		tetris2.SetUpPieceAndStats( gameManager.currentLevel );
 		
 		SetLargerAreaPiece();
 		
 		SetLargerPerimeterPiece();
+		tetris1.PrintTileTypeCount ();
+		tetris2.PrintTileTypeCount ();
 	}
 
-	void ChangeLevel()
-	{
-		if (Input.GetKeyDown (KeyCode.UpArrow)) 
-		{
-			currentLevel = Mathf.Min( currentLevel + 1, maxLevel );
-			Debug.Log ("CURRENT LEVEL: " + currentLevel);
-		}
-		if (Input.GetKeyDown (KeyCode.DownArrow)) 
-		{
-			currentLevel = Mathf.Max (0, currentLevel - 1);
-			Debug.Log ("CURRENT LEVEL: " + currentLevel);
-		}
-	}
+
 
 	void ChangeCurrentComparisonFromInput()
 	{
@@ -145,7 +135,7 @@ public class SelectionManager : MonoBehaviour {
 		{
 			feedbackPosition = selection.centerPosition;
 		}
-		Debug.Log (feedbackPosition);
+//		Debug.Log (feedbackPosition);
 
 		switch ( currentComparison ) 
 		{
@@ -153,11 +143,12 @@ public class SelectionManager : MonoBehaviour {
 			if( selection == largerArea)
 			{
 				feedbackImage = correctAnswerImage;
-	
+				gameManager.UpdateStatsAndLevel( true );
 			}
 			else
 			{
 				feedbackImage = incorrectAnswerImage;
+				gameManager.UpdateStatsAndLevel( false );
 			}
 
 			break;
@@ -166,11 +157,13 @@ public class SelectionManager : MonoBehaviour {
 			if( selection == largerPerimeter)
 			{
 				feedbackImage = correctAnswerImage;
+				gameManager.UpdateStatsAndLevel( true );
 
 			}
 			else
 			{
 				feedbackImage = incorrectAnswerImage;
+				gameManager.UpdateStatsAndLevel( false );
 			}
 			break;
 		}

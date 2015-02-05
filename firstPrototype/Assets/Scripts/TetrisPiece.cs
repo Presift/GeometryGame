@@ -6,9 +6,9 @@ public class TetrisPiece : MonoBehaviour {
 
 	public Vector3 centerPosition;
 
-	float tileSize;
-
 	float scaleChange;
+
+	float tileSize;
 
 	int[,] squareCoordinates = {{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }}; 
 
@@ -16,41 +16,22 @@ public class TetrisPiece : MonoBehaviour {
 
 	int[,] LShapeCoordinates = {{ 1, 0 }, { 0, 0 }, { 0, 1 }, { 0, 2 }}; 
 
-	List<string> tetrisShapes = new List<string> ();
-
-	GameObject squareTile;
-	GameObject rightTriangleTile;
-	GameObject isosceles;
-	GameObject circle;
-	GameObject twoTriangles;
+	int squareTileCount = 0;
+	int rightTriangleCount = 0;
+	int isoscelesCount = 0;
+	int circleCount = 0;
+	int twoTriangleCount = 0;
 
 	public float area;
 	public float perimeter;
 
-	public SelectionManager gameManager;
+	public SelectionManager selectionManager;
+	public GameManager gameManager;
 
 	// Use this for initialization
 	void Start () {
-
-		tileSize = setMaxTileSize ();
-
-		squareTile = (GameObject)Resources.Load("Square");
-		rightTriangleTile = (GameObject)Resources.Load("RightTriangle");
-		isosceles = (GameObject)Resources.Load("Isosceles");
-		circle = (GameObject)Resources.Load("Circ");
-		twoTriangles = (GameObject)Resources.Load("2RightTriangles");
-		
-		//get scale change
-		SpriteRenderer tileRenderer = (SpriteRenderer)squareTile.GetComponent(typeof(SpriteRenderer));
-		float currentTileSize = tileRenderer.bounds.extents.x * 2;
-
-		scaleChange = tileSize / currentTileSize;
-
-		tetrisShapes.Add ("line");
-		tetrisShapes.Add ("square");
-		tetrisShapes.Add ("LShape");
-
-
+		scaleChange = gameManager.scaleChange;
+		tileSize = gameManager.tileSize;
 	}
 	
 	// Update is called once per frame
@@ -61,8 +42,7 @@ public class TetrisPiece : MonoBehaviour {
 
 	public void Selected()
 	{
-		gameManager.IsSelectionCorrect ( this );
-//		Debug.Log ("piece selected");
+		selectionManager.IsSelectionCorrect ( this );
 	}
 
 	public void SetUpPieceAndStats( int level )
@@ -70,37 +50,13 @@ public class TetrisPiece : MonoBehaviour {
 		DestroyCurrentChildren();
 
 		//choose random tetris shape
+		List<string> tetrisShapes = gameManager.GetTetrisShapes ();
 		int random = Random.Range( 0, tetrisShapes.Count );
 		CreateTetrisPiece( tetrisShapes[ random ], level );
 		area = CalculateArea();
 		perimeter = CalculatePerimeter();
 	}
 
-	List<GameObject> GetAvailableTiles( int level )
-	{
-		List<GameObject> availableTiles = new List<GameObject>();
-
-		availableTiles.Add (squareTile);
-		availableTiles.Add (rightTriangleTile);
-
-		if(level > 0 )
-		{
-			availableTiles.Add (isosceles);
-		}
-
-		if (level > 1) 
-		{
-			availableTiles.Add (circle);
-		}
-
-		if (level > 2)
-		{
-			availableTiles.Add (twoTriangles);
-		}
-
-		return availableTiles;
-
-	}
 
 	void CreateTetrisPiece( string tetrisShape, int level )
 	{
@@ -109,7 +65,7 @@ public class TetrisPiece : MonoBehaviour {
 		for (int coordinateIndex = 0; coordinateIndex < 4; coordinateIndex++) 
 		
 		{
-			List<GameObject> availableTiles = GetAvailableTiles( level );
+			List<GameObject> availableTiles = gameManager.GetAvailableTiles();
 
 			int column = coordinates [ coordinateIndex, 0 ];
 			int row = coordinates [ coordinateIndex, 1 ];
@@ -176,15 +132,6 @@ public class TetrisPiece : MonoBehaviour {
 
 	}
 
-	float setMaxTileSize()
-	{
-		//get height of world from camera
-		float height = Camera.main.orthographicSize * 2.0f;
-		float width = height * Screen.width/Screen.height;
-		float maxTileSize = width/ 10;
-
-		return maxTileSize;
-	}
 
 	int getTileAndRotation( Tile tileScript, List<bool> sideExposures )
 	{
@@ -223,18 +170,57 @@ public class TetrisPiece : MonoBehaviour {
 
 			if(rotation >= 0 )
 			{
+				//increase count of this tile type
+				UpdateTileTypeCount( tileScript.name );
+
 				//instantiate new tile at rotation
-//				Debug.Log ( " column " + column + "; row : " + row + " rotation : " + rotation);
 				fittedTile = (GameObject)Instantiate( possibleTile, new Vector3( column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z ), Quaternion.identity);
 				Tile fittedTileScript = ( Tile ) fittedTile.GetComponent(typeof(Tile));
 				fittedTileScript.SetNewPerimetersAfterRotation( rotation );
 				return fittedTile;
-
 			}
+		}
+		return null;
+	}
 
+	public void UpdateTileTypeCount(string tileType)
+	{
+		switch (tileType) 
+		{
+		case "Square":
+			squareTileCount++;
+			break;
+		case "RightTriangle":
+			rightTriangleCount++;
+			break;
+		case "Isosceles":
+			isoscelesCount++;
+			break;
+		case "Circ":
+			circleCount++;
+			break;
+		case "2RightTriangles":
+			twoTriangleCount++;
+			break;
+		default:
+			Debug.Log ("tileType not found ");
+			break;
 		}
 
-		return null;
+	}
+
+	public void ResetTileTypeCount()
+	{
+		squareTileCount = 0;
+		rightTriangleCount = 0;
+		isoscelesCount = 0;
+		circleCount = 0;
+		twoTriangleCount = 0;
+	}
+
+	public void PrintTileTypeCount()
+	{
+//		Debug.Log (this.name + ";   square : " + squareTileCount + ";   triangle : " + rightTriangleCount + ";   isosceles : " + isoscelesCount + ";   circle : " + circleCount + ";   twoTriangles : " + twoTriangleCount);
 	}
 
 
