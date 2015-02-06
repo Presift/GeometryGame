@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,6 +7,8 @@ public class GameManager : MonoBehaviour
 {
 	public GameObject mainCamera;
 	public GameObject canvas;
+
+	public Text scoreDisplay;
 
 	public int pointsForCorrect;
 
@@ -16,7 +19,7 @@ public class GameManager : MonoBehaviour
 	public int correctAnswersInARow = 0;
 	public int correctInARowForLevelUp = 3;
 
-	GameObject squareTile;
+	public GameObject squareTile;
 	GameObject rightTriangleTile;
 	GameObject isosceles;
 	GameObject circle;
@@ -46,7 +49,9 @@ public class GameManager : MonoBehaviour
 
 	}
 
-	void Start(){
+	void Start()
+	{
+		scoreDisplay.text = "Score : " + score;
 	}
 	
 	// Update is called once per frame
@@ -126,6 +131,7 @@ public class GameManager : MonoBehaviour
 			correctAnswersInARow ++;
 			int scoreIncrease = ( currentLevel + 1 ) * pointsForCorrect;
 			score += scoreIncrease;
+			scoreDisplay.text = "Score : " + score;
 		} 
 		else 
 		{

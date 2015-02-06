@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class SelectionManager : MonoBehaviour {
 
@@ -49,16 +50,16 @@ public class SelectionManager : MonoBehaviour {
 
 	void ShowNewProblem()
 	{
-		tetris1.ResetTileTypeCount ();
-		tetris2.ResetTileTypeCount ();
-		tetris1.SetUpPieceAndStats( gameManager.currentLevel );
-		tetris2.SetUpPieceAndStats( gameManager.currentLevel );
+		tetris1.SetUpPieceAndStats( gameManager.currentLevel, null );
+
+		List<GameObject> usedTiles = tetris1.tilesUsed;
+//		Debug.Log ("used Tile Count : " + usedTiles.Count);
+
+		tetris2.SetUpPieceAndStats( gameManager.currentLevel, usedTiles );
 		
 		SetLargerAreaPiece();
 		
 		SetLargerPerimeterPiece();
-		tetris1.PrintTileTypeCount ();
-		tetris2.PrintTileTypeCount ();
 	}
 
 

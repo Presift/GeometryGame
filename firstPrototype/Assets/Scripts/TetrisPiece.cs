@@ -16,11 +16,9 @@ public class TetrisPiece : MonoBehaviour {
 
 	int[,] LShapeCoordinates = {{ 1, 0 }, { 0, 0 }, { 0, 1 }, { 0, 2 }}; 
 
-	int squareTileCount = 0;
-	int rightTriangleCount = 0;
-	int isoscelesCount = 0;
-	int circleCount = 0;
-	int twoTriangleCount = 0;
+	GameObject defaultTile;
+
+	public List<GameObject> tilesUsed;
 
 	public float area;
 	public float perimeter;
@@ -32,6 +30,7 @@ public class TetrisPiece : MonoBehaviour {
 	void Start () {
 		scaleChange = gameManager.scaleChange;
 		tileSize = gameManager.tileSize;
+		defaultTile = gameManager.squareTile;
 	}
 	
 	// Update is called once per frame
@@ -45,27 +44,40 @@ public class TetrisPiece : MonoBehaviour {
 		selectionManager.IsSelectionCorrect ( this );
 	}
 
-	public void SetUpPieceAndStats( int level )
+	public void SetUpPieceAndStats( int level, List<GameObject> previouslyUsedTiles )
 	{
 		DestroyCurrentChildren();
 
 		//choose random tetris shape
 		List<string> tetrisShapes = gameManager.GetTetrisShapes ();
 		int random = Random.Range( 0, tetrisShapes.Count );
-		CreateTetrisPiece( tetrisShapes[ random ], level );
+		CreateTetrisPiece( tetrisShapes[ random ], level, previouslyUsedTiles );
 		area = CalculateArea();
 		perimeter = CalculatePerimeter();
 	}
 
 
-	void CreateTetrisPiece( string tetrisShape, int level )
+	void CreateTetrisPiece( string tetrisShape, int level, List<GameObject> previouslyUsedTiles )
 	{
 		int[,] coordinates = getTetrisPieceCoordinates (tetrisShape);
+		tilesUsed = new List<GameObject> ();  //reset list of tiles used
+		List<GameObject> availableTiles = new List<GameObject>();
+
+//		if (previouslyUsedTiles != null) //if not first tetris piece
+//		{ 
+//			availableTiles = previouslyUsedTiles;
+//		}
+
 
 		for (int coordinateIndex = 0; coordinateIndex < 4; coordinateIndex++) 
 		
 		{
-			List<GameObject> availableTiles = gameManager.GetAvailableTiles();
+//			if( previouslyUsedTiles == null ) //if this is the first tetris piece being created
+//			{
+				availableTiles = gameManager.GetAvailableTiles();
+//				Debug.Log (" available Tiles count : " + availableTiles.Count);
+//			}
+	
 
 			int column = coordinates [ coordinateIndex, 0 ];
 			int row = coordinates [ coordinateIndex, 1 ];
@@ -153,14 +165,26 @@ public class TetrisPiece : MonoBehaviour {
 	GameObject makeNewFittedTile( List<GameObject> availableTiles, List<bool> sideExposures, int column, int row )
 	{
 		GameObject fittedTile = null;
-//		Debug.Log ("available pieces count : " + availableTiles.Count);
 
 		while ( fittedTile == null)
 		{
+//			Debug.Log (name + " available tiles : " + availableTiles.Count);
+
+//			if( availableTiles.Count == 0 )
+//			{
+//				Debug.Log("no more available tiles");
+//				return CreateNewTile( defaultTile, column, row, 0, fittedTile );
+//			}
+
 			//randomly choose a tile from available tile and remove it from list of available tiles
 			int random = Random.Range( 0, availableTiles.Count );
 			GameObject possibleTile = availableTiles[ random ];
-			availableTiles.RemoveAt( random );
+
+//			if( name == "Tetris Piece1")
+//			{
+				availableTiles.RemoveAt( random );
+//			}
+
 
 			//get tile script
 			Tile tileScript = ( Tile ) possibleTile.GetComponent(typeof(Tile));
@@ -170,57 +194,37 @@ public class TetrisPiece : MonoBehaviour {
 
 			if(rotation >= 0 )
 			{
-				//increase count of this tile type
-				UpdateTileTypeCount( tileScript.name );
+//				if( name != "Tetris Piece1")
+//				{
+//					availableTiles.RemoveAt( random ); 
+//				}
 
-				//instantiate new tile at rotation
-				fittedTile = (GameObject)Instantiate( possibleTile, new Vector3( column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z ), Quaternion.identity);
-				Tile fittedTileScript = ( Tile ) fittedTile.GetComponent(typeof(Tile));
-				fittedTileScript.SetNewPerimetersAfterRotation( rotation );
-				return fittedTile;
+				return CreateNewTile( possibleTile, column, row, rotation, fittedTile );
 			}
-		}
-		return null;
-	}
 
-	public void UpdateTileTypeCount(string tileType)
-	{
-		switch (tileType) 
-		{
-		case "Square":
-			squareTileCount++;
-			break;
-		case "RightTriangle":
-			rightTriangleCount++;
-			break;
-		case "Isosceles":
-			isoscelesCount++;
-			break;
-		case "Circ":
-			circleCount++;
-			break;
-		case "2RightTriangles":
-			twoTriangleCount++;
-			break;
-		default:
-			Debug.Log ("tileType not found ");
-			break;
+
 		}
 
+		Debug.Log ("could not find tile from availableTiles to fit, had to use square tile");
+		return CreateNewTile( defaultTile, column, row, 0, fittedTile );
 	}
 
-	public void ResetTileTypeCount()
+	GameObject CreateNewTile( GameObject newTile, int column, int row, int rotation, GameObject fittedTile )
 	{
-		squareTileCount = 0;
-		rightTriangleCount = 0;
-		isoscelesCount = 0;
-		circleCount = 0;
-		twoTriangleCount = 0;
+		//increase count of this tile type
+		UpdateTileTypesUsed( newTile );
+		
+		//instantiate new tile at rotation
+		fittedTile = (GameObject)Instantiate( newTile, new Vector3( column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z ), Quaternion.identity);
+		Tile fittedTileScript = ( Tile ) fittedTile.GetComponent(typeof(Tile));
+		fittedTileScript.SetNewPerimetersAfterRotation( rotation );
+		return fittedTile;
 	}
 
-	public void PrintTileTypeCount()
+	public void UpdateTileTypesUsed( GameObject tile )
 	{
-//		Debug.Log (this.name + ";   square : " + squareTileCount + ";   triangle : " + rightTriangleCount + ";   isosceles : " + isoscelesCount + ";   circle : " + circleCount + ";   twoTriangles : " + twoTriangleCount);
+		tilesUsed.Add (tile);
+//		Debug.Log (name + "  " + tilesUsed.Count);
 	}
 
 
