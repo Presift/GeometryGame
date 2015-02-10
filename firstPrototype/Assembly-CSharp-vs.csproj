@@ -46,10 +46,14 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\GameManager.cs" />
-     <Compile Include="Assets\Scripts\SelectionManager.cs" />
-     <Compile Include="Assets\Scripts\TetrisPiece.cs" />
-     <Compile Include="Assets\Scripts\Tile.cs" />
+     <Compile Include="Assets\Scripts\Area\GameManager.cs" />
+     <Compile Include="Assets\Scripts\Area\SelectionManager.cs" />
+     <Compile Include="Assets\Scripts\Area\TetrisPiece.cs" />
+     <Compile Include="Assets\Scripts\Area\Tile.cs" />
+     <Compile Include="Assets\Scripts\Cake\CakeLayer.cs" />
+     <Compile Include="Assets\Scripts\Cake\CakeTile.cs" />
+     <Compile Include="Assets\Scripts\Cake\GameModel.cs" />
+     <Compile Include="Assets\Scripts\Cake\Selection.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>/Applications/Unity/Unity.app/Contents/UnityExtensions/Unity/GUISystem/4.6.1/UnityEngine.UI.dll</HintPath>
  </Reference>
