@@ -5,10 +5,11 @@ using System.Collections.Generic;
 
 public class Selection : MonoBehaviour {
 	
-	public List<CakeTier> volumeOrder = new List<CakeTier> ();
+	public List<float> volumeOrder = new List<float> ();
 	public List<CakeTier> currentCakeTiers = new List<CakeTier>();
 
 	public GameModel gameManager;
+	public CakePlate cakePlate;
 
 	public Text comparisonLabel;
 //	Vector3 comparisonLabelPosition;
@@ -50,7 +51,8 @@ public class Selection : MonoBehaviour {
 	public void ShowNewProblem()
 	{
 		WipePreviousProblem ();
-	
+		cakePlate.WipeCakePlate ();
+
 //		int numberOfTiers = gameManager.NumberOfTiersByLevel ();
 		int numberOfTiers = 5;
 
@@ -66,6 +68,7 @@ public class Selection : MonoBehaviour {
 
 			//create new cake tier
 			GameObject newCakeTier = (GameObject)Instantiate( cakeTier, new Vector3( 0, 0, 0), Quaternion.identity);
+			newCakeTier.name = "Cake Tier " + newTier;
 
 			//parent newCakeTier to this GO
 			newCakeTier.transform.parent = this.gameObject.transform;
@@ -78,12 +81,12 @@ public class Selection : MonoBehaviour {
 
 
 			currentCakeTiers.Add ( tierScript );
+			volumeOrder.Add ( tierScript.volume );
 
 		}
 		
 		SetVolumeOrder();
 
-		volumeOrder = currentCakeTiers;
 
 		//unlock answer input
 		LockInput (false);
@@ -94,17 +97,19 @@ public class Selection : MonoBehaviour {
 	{
 		DestroyCurrentChildren ();
 		currentCakeTiers = new List<CakeTier> ();
-		volumeOrder = new List<CakeTier> ();
+		volumeOrder = new List<float> ();
 
 	}
 
 
 	void SetVolumeOrder()  //order is from largest volume to smallest
 	{
-		currentCakeTiers.Sort ( delegate (CakeTier x, CakeTier y )
-		{
-			return x.volume.CompareTo(y.volume);
-		});
+		volumeOrder.Sort ();
+		volumeOrder.Reverse ();
+//		for (int i = 0; i < volumeOrder.Count; i ++) 
+//		{
+//			Debug.Log ( "volume : " + volumeOrder[ i ]);	
+//		}
 	}
 	
 
@@ -116,10 +121,14 @@ public class Selection : MonoBehaviour {
 		feedbackPosition = new Vector3( selection.centerPosition.x, selection.centerPosition.y, -1 );
 	
 		//if selection is largest volume
-		if( selection ==  volumeOrder[ 0 ] )
+		if( selection.volume ==  volumeOrder[ 0 ] )
 	   	{
-			//remove selection from volumeOrder
+			//remove selection from volumeOrder and current cake tiers
+//			Debug.Log (cakePlate.cakePlatePosition);
+			selection.positionOnCakePlate = cakePlate.TierPositionOnPlate( selection.tierHeight );
+			selection.MoveToCakePlate( cakePlate );
 			volumeOrder.RemoveAt( 0 );
+			currentCakeTiers.Remove( selection );
 			feedbackImage = correctAnswerImage;
 			gameManager.UpdateStatsAndLevel( true );
 		}
@@ -175,22 +184,11 @@ public class Selection : MonoBehaviour {
 
 	void LockInput( bool locked )
 	{
-		if (locked) 
-		{
-			//lock input on all cake tiles in game
+			//unlock input on all cake tiles in current cakes
 			for( int tier = 0; tier < currentCakeTiers.Count; tier++ )
 			{
-				currentCakeTiers[ tier ].inputLocked = true;
+				currentCakeTiers[ tier ].inputLocked = ( locked );
 			}
-		} 
-		else 
-		{
-			//unlock input on all cake tiles in volumeOrder
-			for( int tier = 0; tier < volumeOrder.Count; tier++ )
-			{
-				volumeOrder[ tier ].inputLocked = false;
-			}
-		}
 	}
 
 //	public void EqualButtonPressed ()

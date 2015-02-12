@@ -67,7 +67,7 @@ public class GameModel : MonoBehaviour
 	
 	// Update is called once per frame
 	void Update () {
-//		ChangeLevel ();
+		ChangeLevel ();
 
 		if (Input.GetKeyDown (KeyCode.Space)) 
 		{
@@ -162,30 +162,34 @@ public class GameModel : MonoBehaviour
 
 		return tetrisShapes;
 	}
-//
-//	void ChangeLevel()
-//	{
-//		if (Input.GetKeyDown (KeyCode.UpArrow)) 
-//		{
-//			currentLevel = Mathf.Min( currentLevel + 1, maxLevel );
-//			Debug.Log ("CURRENT LEVEL: " + currentLevel);
-//		}
-//		if (Input.GetKeyDown (KeyCode.DownArrow)) 
-//		{
-//			currentLevel = Mathf.Max (0, currentLevel - 1);
-//			Debug.Log ("CURRENT LEVEL: " + currentLevel);
-//		}
-//	}
-//
+
+	void ChangeLevel()
+	{
+		if (Input.GetKeyDown (KeyCode.UpArrow)) 
+		{
+			currentLevel = Mathf.Min( currentLevel + 1, maxLevel );
+			Debug.Log ("CURRENT LEVEL: " + currentLevel);
+		}
+		if (Input.GetKeyDown (KeyCode.DownArrow)) 
+		{
+			currentLevel = Mathf.Max (0, currentLevel - 1);
+			Debug.Log ("CURRENT LEVEL: " + currentLevel);
+		}
+	}
+
 	public void UpdateStatsAndLevel( bool correctAnswer )
 	{
 		if (correctAnswer) {
-
-			correctAnswersInARow ++;
 			int scoreIncrease = ( currentLevel + 1 ) * pointsForCorrect;
 			score += scoreIncrease;
 			scoreDisplay.text = "Score : " + score;
+
+			if( selectionManager.currentCakeTiers.Count <= 1 )
+			{
+				correctAnswersInARow ++;
+			}
 		} 
+
 		else 
 		{
 			correctAnswersInARow = 0;
