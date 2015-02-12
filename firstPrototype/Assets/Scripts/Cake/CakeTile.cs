@@ -14,6 +14,10 @@ public class CakeTile : MonoBehaviour {
 
 	public float area;
 
+//	public bool inputLocked;
+
+	private CakeTier tierScript; //grandparent component
+
 	// Use this for initialization
 	void Awake () {
 
@@ -26,11 +30,11 @@ public class CakeTile : MonoBehaviour {
 
 	void OnMouseDown()
 	{
-		//get parent script Tetris Piece
-		Transform parent = gameObject.transform.parent;
+		if (!tierScript.inputLocked) 
+		{
+			tierScript.Selected ();	
+		}
 
-		TetrisPiece pieceScript = (TetrisPiece)parent.GetComponent (typeof(TetrisPiece));
-		pieceScript.Selected ();
 	}
 	
 
@@ -77,6 +81,11 @@ public class CakeTile : MonoBehaviour {
 		sidePerimeters.Add (topPerimeter);
 		sidePerimeters.Add (rightPerimeter);
 		sidePerimeters.Add (bottomPerimeter);
+	}
+
+	public void SetGrandparentScript( CakeTier script )
+	{
+		tierScript = script;
 	}
 
 

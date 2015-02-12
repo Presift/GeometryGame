@@ -51,6 +51,7 @@
      <Compile Include="Assets\Scripts\Area\TetrisPiece.cs" />
      <Compile Include="Assets\Scripts\Area\Tile.cs" />
      <Compile Include="Assets\Scripts\Cake\CakeLayer.cs" />
+     <Compile Include="Assets\Scripts\Cake\CakeTier.cs" />
      <Compile Include="Assets\Scripts\Cake\CakeTile.cs" />
      <Compile Include="Assets\Scripts\Cake\GameModel.cs" />
      <Compile Include="Assets\Scripts\Cake\Selection.cs" />

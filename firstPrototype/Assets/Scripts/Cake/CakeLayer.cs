@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class CakeLayer : MonoBehaviour {
-
-	public Vector3 centerPosition;
-
+	
 	float scaleChange;
 
 	float tileSize;
@@ -21,24 +19,23 @@ public class CakeLayer : MonoBehaviour {
 	public List<GameObject> tilesUsed;
 
 	public float area;
-	public float perimeter;
 
 	public Selection selectionManager;
 	public GameModel gameManager;
 
+	public Color frostingColor;
+
 	// Use this for initialization
 	void Start () {
-		scaleChange = gameManager.scaleChange;
-		tileSize = gameManager.tileSize;
-		defaultTile = gameManager.cubeTile;
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown (KeyCode.Space)) 
-		{
-			SetUpPieceAndStats( 0, null);
-		}
+//		if (Input.GetKeyDown (KeyCode.Space)) 
+//		{
+//			SetUpPieceAndStats( 0, null );
+//		}
 	}
 
 
@@ -47,59 +44,51 @@ public class CakeLayer : MonoBehaviour {
 //		selectionManager.IsSelectionCorrect ( this );
 //	}
 
-	public void SetUpPieceAndStats( int level, List<GameObject> previouslyUsedTiles )
-	{
-		DestroyCurrentChildren();
+	public float SetUpPieceAndStats( int level, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<string> tetrisShapes, List<GameObject> availableTiles, CakeTier tierScript )
 
-		//choose random tetris shape
-		List<string> tetrisShapes = gameManager.GetTetrisShapes ();
+	{
+		scaleChange = newScaleChange;
+		tileSize = newTileSize;
+		defaultTile = newDefaultTile;
+
 		int random = Random.Range( 0, tetrisShapes.Count );
-		CreateTetrisPiece( tetrisShapes[ random ], level, previouslyUsedTiles );
+		CreateTetrisPiece( tetrisShapes[ random ], level, centerPosition, availableTiles, tierScript );
 		area = CalculateArea();
-		perimeter = CalculatePerimeter();
+
+		return area;
 	}
 
 
-	void CreateTetrisPiece( string tetrisShape, int level, List<GameObject> previouslyUsedTiles )
+	void CreateTetrisPiece( string tetrisShape, int level, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
 	{
 		int[,] coordinates = getTetrisPieceCoordinates (tetrisShape);
-		tilesUsed = new List<GameObject> ();  //reset list of tiles used
-		List<GameObject> availableTiles = new List<GameObject>();
-
-//		if (previouslyUsedTiles != null) //if not first tetris piece
-//		{ 
-//			availableTiles = previouslyUsedTiles;
-//		}
 
 
 		for (int coordinateIndex = 0; coordinateIndex < 4; coordinateIndex++) 
 		
 		{
-//			if( previouslyUsedTiles == null ) //if this is the first tetris piece being created
-//			{
-				availableTiles = gameManager.GetAvailableTiles();
-//				Debug.Log (" available Tiles count : " + availableTiles.Count);
-//			}
-	
+			List < GameObject > refreshedTiles = new List < GameObject > ( availableTiles );
 
 			int column = coordinates [ coordinateIndex, 0 ];
 			int row = coordinates [ coordinateIndex, 1 ];
 
 			List<bool> sideExposures = getTilePieceSideExposure( tetrisShape, coordinateIndex );
 
-			GameObject newTile = makeNewFittedTile( availableTiles, sideExposures, column, row );
+			GameObject newTile = makeNewFittedTile( refreshedTiles, sideExposures, column, row, centerPosition );
 			//instantiate tile at scaled size at coordinate
 
 			newTile.transform.localScale *= scaleChange;
 
 			//set side Exposure bools on this tile
 			CakeTile tileScript = (CakeTile)newTile.GetComponent(typeof(CakeTile));
+			tileScript.SetGrandparentScript( tierScript );
 			tileScript.sideExposures = sideExposures;
 
 			//attach tile to parent piece
 			newTile.transform.parent = this.gameObject.transform;
 		}
 	}
+	
 
 	float CalculateArea()
 	{
@@ -114,38 +103,10 @@ public class CakeLayer : MonoBehaviour {
 			area += tileScript.area;
 
 		}
-//		Debug.Log ("area : " + area);
 		return area;
 
 	}
 
-	float CalculatePerimeter()
-	{
-
-		float perim = 0;
-		Transform parent = gameObject.transform;
-
-		//for each child 
-		foreach (Transform child in parent) 
-		{
-			//add child's area to total area
-			CakeTile tileScript = (CakeTile)child.GetComponent(typeof(CakeTile));
-			List<bool> sideExposures = tileScript.sideExposures;
-			List<float> sidePerimeters = tileScript.sidePerimeters;
-			for( int side = 0; side < 4; side++)
-			{
-				if(sideExposures[ side ]) //if side is exposed
-				{
-					//add perimeter to perimeter total
-					perim += sidePerimeters[ side ];
-//					Debug.Log ("perim : " + sidePerimeters[ side ]);
-				}
-			}
-		}
-//		Debug.Log ("perimeter : " + perim);
-		return perim;
-
-	}
 
 
 	int getTileAndRotation( CakeTile tileScript, List<bool> sideExposures )
@@ -153,7 +114,6 @@ public class CakeLayer : MonoBehaviour {
 		for (int rotation = 0; rotation < 4; rotation ++) 
 		{
 			List<float> sidePerimeters = tileScript.GetNewPerimetersAfterRotation ( 90 * rotation );
-//			Debug.Log ( "rotation try : " + (rotation * 90));
 			if( tileFitsInCoordinates( sidePerimeters, sideExposures ))
 			{
 				//return side perimeters
@@ -165,28 +125,18 @@ public class CakeLayer : MonoBehaviour {
 		return -1;
 	}
 
-	GameObject makeNewFittedTile( List<GameObject> availableTiles, List<bool> sideExposures, int column, int row )
+	GameObject makeNewFittedTile( List<GameObject> availableTiles, List<bool> sideExposures, int column, int row, Vector3 centerPosition )
 	{
 		GameObject fittedTile = null;
 
 		while ( fittedTile == null)
 		{
-//			Debug.Log (name + " available tiles : " + availableTiles.Count);
-
-//			if( availableTiles.Count == 0 )
-//			{
-//				Debug.Log("no more available tiles");
-//				return CreateNewTile( defaultTile, column, row, 0, fittedTile );
-//			}
 
 			//randomly choose a tile from available tile and remove it from list of available tiles
 			int random = Random.Range( 0, availableTiles.Count );
 			GameObject possibleTile = availableTiles[ random ];
 
-//			if( name == "Tetris Piece1")
-//			{
-				availableTiles.RemoveAt( random );
-//			}
+			availableTiles.RemoveAt( random );
 
 
 			//get tile script
@@ -197,22 +147,17 @@ public class CakeLayer : MonoBehaviour {
 
 			if(rotation >= 0 )
 			{
-//				if( name != "Tetris Piece1")
-//				{
-//					availableTiles.RemoveAt( random ); 
-//				}
-
-				return CreateNewTile( possibleTile, column, row, rotation, fittedTile );
+				return CreateNewTile( possibleTile, column, row, rotation, fittedTile, centerPosition );
 			}
 
 
 		}
 
 		Debug.Log ("could not find tile from availableTiles to fit, had to use square tile");
-		return CreateNewTile( defaultTile, column, row, 0, fittedTile );
+		return CreateNewTile( defaultTile, column, row, 0, fittedTile, centerPosition );
 	}
 
-	GameObject CreateNewTile( GameObject newTile, int column, int row, int rotation, GameObject fittedTile )
+	GameObject CreateNewTile( GameObject newTile, int column, int row, int rotation, GameObject fittedTile, Vector3 centerPosition )
 	{
 		//increase count of this tile type
 		UpdateTileTypesUsed( newTile );
@@ -227,7 +172,6 @@ public class CakeLayer : MonoBehaviour {
 	public void UpdateTileTypesUsed( GameObject tile )
 	{
 		tilesUsed.Add (tile);
-//		Debug.Log (name + "  " + tilesUsed.Count);
 	}
 
 
@@ -325,19 +269,30 @@ public class CakeLayer : MonoBehaviour {
 
 	}
 
-	void DestroyCurrentChildren()
+	public void ChangeChildrenColor()
 	{
-
 		Transform parent = gameObject.transform;
 
 		foreach (Transform child in parent) 
 		{
-			Destroy(child.gameObject);
+			//set child color
+			child.renderer.material.color = frostingColor;
 		}
-
-		gameObject.transform.DetachChildren ();
-
 	}
+
+//	void DestroyCurrentChildren()
+//	{
+//
+//		Transform parent = gameObject.transform;
+//
+//		foreach (Transform child in parent) 
+//		{
+//			Destroy(child.gameObject);
+//		}
+//
+//		gameObject.transform.DetachChildren ();
+//
+//	}
 
 	
 
