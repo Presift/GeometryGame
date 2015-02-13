@@ -12,7 +12,6 @@ public class Selection : MonoBehaviour {
 	public CakePlate cakePlate;
 
 	public Text comparisonLabel;
-//	Vector3 comparisonLabelPosition;
 
 	public GameObject correctAnswerImage;
 	public GameObject incorrectAnswerImage;
@@ -33,7 +32,6 @@ public class Selection : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-//		comparisonLabelPosition = new Vector3 (0f, 5f, 0f);
 		cakeLayer = (GameObject)Resources.Load("Cake Layer");
 		cakeTier = (GameObject)Resources.Load ("Cake Tier");
 //		ShowNewProblem ();
@@ -106,10 +104,6 @@ public class Selection : MonoBehaviour {
 	{
 		volumeOrder.Sort ();
 		volumeOrder.Reverse ();
-//		for (int i = 0; i < volumeOrder.Count; i ++) 
-//		{
-//			Debug.Log ( "volume : " + volumeOrder[ i ]);	
-//		}
 	}
 	
 
@@ -124,7 +118,6 @@ public class Selection : MonoBehaviour {
 		if( selection.volume ==  volumeOrder[ 0 ] )
 	   	{
 			//remove selection from volumeOrder and current cake tiers
-//			Debug.Log (cakePlate.cakePlatePosition);
 			selection.positionOnCakePlate = cakePlate.TierPositionOnPlate( selection.tierHeight );
 			selection.MoveToCakePlate( cakePlate );
 			volumeOrder.RemoveAt( 0 );
@@ -132,9 +125,7 @@ public class Selection : MonoBehaviour {
 			feedbackImage = correctAnswerImage;
 			gameManager.UpdateStatsAndLevel( true );
 		}
-
 		else
-
 		{
 			feedbackImage = incorrectAnswerImage;
 			gameManager.UpdateStatsAndLevel( false );
@@ -170,9 +161,8 @@ public class Selection : MonoBehaviour {
 			if( volumeOrder.Count == 0 )
 			{
 				//show final cake
+				cakePlate.rotating = true;
 
-				//prompt new problem
-				ShowNewProblem();
 			}
 			else
 			{
@@ -190,11 +180,7 @@ public class Selection : MonoBehaviour {
 				currentCakeTiers[ tier ].inputLocked = ( locked );
 			}
 	}
-
-//	public void EqualButtonPressed ()
-//	{
-//		IsSelectionCorrect (null);
-//	}
+	
 
 	void DestroyCurrentChildren()
 	{

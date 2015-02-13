@@ -45,6 +45,7 @@ public class CakeTier : MonoBehaviour {
 	public float NewCakeTier ( int numberOfLayers, float newTileSize, float newTileHeight, float scaleChange, GameObject defaultTile, Vector3 position, List<string> tetrisShapes, CakeTier tierScript )
 	{
 		centerPosition = position;
+		this.transform.position = centerPosition;
 		List<GameObject> availableTiles = manager.GetAvailableTiles ();
 		//instantiate a cake layer
 		GameObject newCakeLayer = (GameObject)Resources.Load("Cake Layer");
@@ -104,7 +105,7 @@ public class CakeTier : MonoBehaviour {
 //		Debug.Log (transform.position);
 		if (fracJourney >= 1) {
 			move = false;
-//			Debug.Log (transform.position);
+			transform.position = endMarker;
 		} 
 		else 
 		{
