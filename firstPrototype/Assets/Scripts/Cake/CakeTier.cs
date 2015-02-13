@@ -17,7 +17,7 @@ public class CakeTier : MonoBehaviour {
 
 	Vector3 startMarker;
 	Vector3 endMarker;
-	float speed = 10;
+	float speed = 5;
 	float journeyLength;
 	float startTime;
 
