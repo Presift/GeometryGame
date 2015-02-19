@@ -6,15 +6,18 @@ public class CakePlate : MonoBehaviour {
 
 	public Vector3 cakePlatePosition = new Vector3( 0 , -6, 0 );
 	public Selection selectionManager;
-	public Vector3 previousTierPositionOnPlate;
+	public Vector3 previousTierCenterPositionOnPlate;
 	public float previousTierHeight; 
+
 	public float rotationSpeed = 50;
 	public float finalYRotation = 350;
 	public bool rotating = false;
 
+	public float singleTierHeight;
+
 	// Use this for initialization
 	void Start () {
-		Debug.Log (rotationSpeed);
+//		Debug.Log (finalYRotation);
 	}
 	
 	// Update is called once per frame
@@ -29,7 +32,7 @@ public class CakePlate : MonoBehaviour {
 	public void WipeCakePlate()
 	{
 		previousTierHeight = 0;
-		previousTierPositionOnPlate = cakePlatePosition;
+		previousTierCenterPositionOnPlate = cakePlatePosition;
 		DestroyCurrentChildren ();
 		ResetRotation ();
 	
@@ -52,21 +55,26 @@ public class CakePlate : MonoBehaviour {
 
 	public Vector3 TierPositionOnPlate( float tierHeight )
 	{
+		float centerOffset = (( tierHeight / singleTierHeight ) - 1) / 2 * singleTierHeight;
+		Debug.Log ("center offset : " + centerOffset);
 
-		Vector3 newTierPosition = previousTierPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + tierHeight ) / 2, 0 );
+//		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + tierHeight + centerOffset ) / 2, 0 );
+//		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + tierHeight ) / 2, 0 );
+		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + singleTierHeight ) / 2, 0 );
+
 
 		previousTierHeight = tierHeight;
-		previousTierPositionOnPlate = newTierPosition;
-
-		Debug.Log (newTierPosition);
+		previousTierCenterPositionOnPlate = newTierPosition + new Vector3( 0, centerOffset, 0);
+		Debug.Log (" tier height : " + tierHeight);
+		Debug.Log (" tier position : " + newTierPosition);
+//		Debug.Log (newTierPosition);
 		return newTierPosition;
 	}
 
 	public void RotatePlate()
 	{
-		if (transform.rotation.y < finalYRotation) {
+		if (transform.localEulerAngles.y < finalYRotation) {
 			transform.localEulerAngles += new Vector3 (0, rotationSpeed * Time.deltaTime, 0);
-			Debug.Log (rotationSpeed);
 		} 
 		else 
 		{

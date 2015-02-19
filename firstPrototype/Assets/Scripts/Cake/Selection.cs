@@ -21,6 +21,8 @@ public class Selection : MonoBehaviour {
 	bool showFeedback = false;
 
 	public float timeToShowFeedback;
+
+
 	float timeShowingFeeback;
 
 	CakeLayer largerArea;
@@ -51,18 +53,46 @@ public class Selection : MonoBehaviour {
 		WipePreviousProblem ();
 		cakePlate.WipeCakePlate ();
 
-//		int numberOfTiers = gameManager.NumberOfTiersByLevel ();
-		int numberOfTiers = 5;
+		int numberOfTiers = gameManager.NumberOfTiersByLevel ();
+
+		List <GameObject> availableTiles = gameManager.GetAvailableTilesByLevel ();
+
+		List<int> possibleTileCounts = gameManager.GetPossibleTileCountsByLevel ();
+
+		List<int[,]> allLayerCoordinates = new List<int[,]> ();
+		List<Vector2> layerSizes = new List<Vector2> ();
+		int totalTilesAcross = 0;
+		int totalTilesDown = 0;
+		for (int newTier = 0; newTier < numberOfTiers; newTier++) 
+		{
+			int random = Random.Range (0, possibleTileCounts.Count );
+			int[,] pieceCoordinates = GetPieceCoordinatesFromTileCount( possibleTileCounts, random );
+			allLayerCoordinates.Add ( pieceCoordinates );
+			Vector2 layerSizeInTiles = GetSizeOfPieceFromCoordinates( pieceCoordinates );
+			layerSizes.Add (layerSizeInTiles);
+			totalTilesAcross += (int)layerSizeInTiles.x;
+			totalTilesDown += (int)layerSizeInTiles.y;
+		}
 
 		//calculate new tile sizes
-		float tileSize = gameManager.MaxTileSize( numberOfTiers * 4 );
+		float tileSize = gameManager.MaxTileSize( numberOfTiers, totalTilesAcross, totalTilesDown );
 		float scaleChange = gameManager.ScaleChange( tileSize );
 		float tileHeight = gameManager.TileHeight( scaleChange );
+		cakePlate.singleTierHeight = tileHeight * 1.25f;
+
+		List<Vector3> tierStartPositions = gameManager.CakeTierStartPositions (tileSize, layerSizes, totalTilesAcross);
 
 		for (int newTier = 0; newTier < numberOfTiers; newTier++) 
 		{
+			int[,] pieceCoordinates = allLayerCoordinates[newTier];
+			int layerCount = gameManager.GetLayerCount( ( pieceCoordinates.Length/2) );
+
+			int tilesAcross = (int)layerSizes[ newTier ].x;
+			int tilesDown = (int)layerSizes[ newTier ].y;
+
 			//get position for new tier
-			Vector3 startPosition = gameManager.CakeTierStartPosition( numberOfTiers, newTier );
+			Vector3 startPosition = tierStartPositions[ newTier ];
+
 
 			//create new cake tier
 			GameObject newCakeTier = (GameObject)Instantiate( cakeTier, new Vector3( 0, 0, 0), Quaternion.identity);
@@ -75,7 +105,7 @@ public class Selection : MonoBehaviour {
 			CakeTier tierScript = (CakeTier)newCakeTier.GetComponent(typeof(CakeTier));
 			tierScript.manager = gameManager;
 			tierScript.selectionManager = this;
-			tierScript.NewCakeTier( 2, tileSize, tileHeight, scaleChange, gameManager.cubeTile, startPosition, gameManager.GetTetrisShapes(), tierScript );
+			tierScript.NewCakeTier( pieceCoordinates, layerCount, tileSize, tileHeight, scaleChange, gameManager.cubeTile, startPosition, tierScript, availableTiles, volumeOrder );
 
 
 			currentCakeTiers.Add ( tierScript );
@@ -85,10 +115,54 @@ public class Selection : MonoBehaviour {
 		
 		SetVolumeOrder();
 
-
 		//unlock answer input
 		LockInput (false);
 	
+	}
+
+	Vector2 GetSizeOfPieceFromCoordinates( int[,] pieceCoordinates )
+	{
+		int smallestX = 1000;
+		int largestX = 0;
+		int smallestY = 1000;
+		int largestY = 0;
+
+		for( int coordinate = 0; coordinate < ( pieceCoordinates.Length / 2 ); coordinate ++ )
+		{
+			int xCoord = pieceCoordinates[ coordinate, 0 ];
+			int yCoord = pieceCoordinates[ coordinate, 1 ];
+
+			//if x coordinate is smaller than smallest
+			if( xCoord < smallestX )
+			{
+				smallestX = xCoord;
+			}
+			//if x coordinate is larger than largest
+			if( xCoord > largestX )
+			{
+				largestX = xCoord;
+			}
+			//if y coordinate is smaller than smallest
+			if( yCoord < smallestY )
+			{
+				smallestY = yCoord;
+			}
+			//if y coordinate is larger than largest
+			if( yCoord > largestY )
+			{
+				largestY = yCoord;
+			}
+		}
+		int tilesAcross = Mathf.Abs (largestX - smallestX);
+		int tilesDown = Mathf.Abs (largestY - smallestY);
+		return new Vector2 (tilesAcross + 1 , tilesDown + 1);
+	}
+
+	int[,] GetPieceCoordinatesFromTileCount( List<int> tileCounts, int random )
+	{
+		int tileCount = tileCounts[ random ];
+		int[,] pieceCoordinates = gameManager.PieceCoordinates( tileCount );
+		return pieceCoordinates;
 	}
 
 	void WipePreviousProblem()
@@ -107,14 +181,14 @@ public class Selection : MonoBehaviour {
 	}
 	
 
-	public void IsSelectionCorrect( CakeTier selection )
+	public bool IsSelectionCorrect( CakeTier selection )
 	{
 		Vector3 feedbackPosition;
 
 
 		feedbackPosition = new Vector3( selection.centerPosition.x, selection.centerPosition.y, -1 );
 	
-		//if selection is largest volume
+		//if selection is largest volume ( correct )
 		if( selection.volume ==  volumeOrder[ 0 ] )
 	   	{
 			//remove selection from volumeOrder and current cake tiers
@@ -124,20 +198,22 @@ public class Selection : MonoBehaviour {
 			currentCakeTiers.Remove( selection );
 			feedbackImage = correctAnswerImage;
 			gameManager.UpdateStatsAndLevel( true );
+			ShowFeedback (feedbackPosition);
+			return true;
 		}
 		else
 		{
 			feedbackImage = incorrectAnswerImage;
 			gameManager.UpdateStatsAndLevel( false );
+			ShowFeedback (feedbackPosition);
+			return false;
 		}
-
-		ShowFeedback (feedbackPosition);
 	}
 
 	void ShowFeedback( Vector3 position )
 	{
 		//lock answer input
-		LockInput ( true );
+//		LockInput ( true );
 
 		feedbackImage.transform.position = position;
 		feedbackImage.SetActive (true);
@@ -166,7 +242,7 @@ public class Selection : MonoBehaviour {
 			}
 			else
 			{
-				LockInput ( false );
+//				LockInput ( false );
 			}
 				
 		}

@@ -15,6 +15,9 @@ public class CakeTier : MonoBehaviour {
 
 	public Vector3 positionOnCakePlate;
 
+	public int tilesAcross;
+	public int tilesDown;
+
 	Vector3 startMarker;
 	Vector3 endMarker;
 	float speed = 5;
@@ -42,11 +45,11 @@ public class CakeTier : MonoBehaviour {
 		}
 	}
 
-	public float NewCakeTier ( int numberOfLayers, float newTileSize, float newTileHeight, float scaleChange, GameObject defaultTile, Vector3 position, List<string> tetrisShapes, CakeTier tierScript )
+	public float NewCakeTier ( int[,] pieceCoordinates, int numberOfLayers, float newTileSize, float newTileHeight, float scaleChange, GameObject defaultTile, Vector3 position, CakeTier tierScript, List<GameObject> availableTiles, List<float> cakeVolumes )
 	{
 		centerPosition = position;
 		this.transform.position = centerPosition;
-		List<GameObject> availableTiles = manager.GetAvailableTiles ();
+
 		//instantiate a cake layer
 		GameObject newCakeLayer = (GameObject)Resources.Load("Cake Layer");
 		GameObject newCakeLayerObject = (GameObject)Instantiate( newCakeLayer, position, Quaternion.identity);
@@ -56,7 +59,22 @@ public class CakeTier : MonoBehaviour {
 		
 		//create cake tile pieces on layer
 		CakeLayer layerScript = ( CakeLayer )newCakeLayerObject.GetComponent( typeof( CakeLayer ));
-		float area = layerScript.SetUpPieceAndStats( 0, newTileSize, scaleChange, defaultTile, position, tetrisShapes, availableTiles, tierScript );
+		float area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, position, availableTiles, tierScript );
+
+		int redoAttempts = 0;
+
+		//while potential cake volume is equal to another cake volume
+		while( VolumeMatchesAnotherCakeColume( area * numberOfLayers, cakeVolumes ) && redoAttempts < 50 )
+      	{
+			//wipe previous layer
+			layerScript.WipeCurrentLayer();
+			//set up a new layer
+			area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, position, availableTiles, tierScript );
+			redoAttempts ++;
+		}
+
+		Debug.Log (" cake remake count : " + redoAttempts);
+			
 
 		float frostingHeight = newTileHeight/4;
 
@@ -97,6 +115,20 @@ public class CakeTier : MonoBehaviour {
 		return volume;
 	}
 
+	bool VolumeMatchesAnotherCakeColume( float thisCakeVolume, List<float> cakeVolumes )
+	{
+		for (int cakeVolume = 0; cakeVolume < cakeVolumes.Count; cakeVolume++) 
+		{
+			if( thisCakeVolume == cakeVolumes[ cakeVolume ] )
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+
 	void Move ()
 	{
 		float distCovered = (Time.time - startTime) * speed;
@@ -119,7 +151,7 @@ public class CakeTier : MonoBehaviour {
 		//start rotation
 		transform.localEulerAngles = new Vector3 (270, 110, 20);
 
-		Debug.Log (positionOnCakePlate);
+//		Debug.Log (positionOnCakePlate);
 		StartMove ( positionOnCakePlate );
 
 		//parent to cake plate
@@ -143,8 +175,8 @@ public class CakeTier : MonoBehaviour {
 
 	public void Selected()
 	{
-		selectionManager.IsSelectionCorrect ( this );
-		inputLocked = true;
+		inputLocked = selectionManager.IsSelectionCorrect ( this );
+//		inputLocked = true;
 	}
 	
 }

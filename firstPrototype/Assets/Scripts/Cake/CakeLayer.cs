@@ -8,12 +8,6 @@ public class CakeLayer : MonoBehaviour {
 
 	float tileSize;
 
-	int[,] squareCoordinates = {{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }}; 
-
-	int[,] lineCoordinates = {{ 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }}; 
-
-	int[,] LShapeCoordinates = {{ 1, 0 }, { 0, 0 }, { 0, 1 }, { 0, 2 }}; 
-
 	GameObject defaultTile;
 
 	public List<GameObject> tilesUsed;
@@ -21,50 +15,50 @@ public class CakeLayer : MonoBehaviour {
 	public float area;
 
 	public Selection selectionManager;
-	public GameModel gameManager;
+//	public GameModel gameManager;
 
 	public Color frostingColor;
 
 	// Use this for initialization
-	void Start () {
+	void Awake () {
 
 	}
 	
 	// Update is called once per frame
 	void Update () {
-//		if (Input.GetKeyDown (KeyCode.Space)) 
-//		{
-//			SetUpPieceAndStats( 0, null );
-//		}
+
 	}
 
-
-//	public void Selected()
-//	{
-//		selectionManager.IsSelectionCorrect ( this );
-//	}
-
-	public float SetUpPieceAndStats( int level, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<string> tetrisShapes, List<GameObject> availableTiles, CakeTier tierScript )
+	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
 
 	{
 		scaleChange = newScaleChange;
 		tileSize = newTileSize;
 		defaultTile = newDefaultTile;
 
-		int random = Random.Range( 0, tetrisShapes.Count );
-		CreateTetrisPiece( tetrisShapes[ random ], level, centerPosition, availableTiles, tierScript );
+		CreateTetrisPiece( pieceCoordinates, centerPosition, availableTiles, tierScript );
 		area = CalculateArea();
 
 		return area;
 	}
 
-
-	void CreateTetrisPiece( string tetrisShape, int level, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
+	public void WipeCurrentLayer()
 	{
-		int[,] coordinates = getTetrisPieceCoordinates (tetrisShape);
+		Transform parent = gameObject.transform;
+		
+		foreach (Transform child in parent) 
+		{
+			Destroy(child.gameObject);
+		}
+		
+		gameObject.transform.DetachChildren ();
+	}
 
 
-		for (int coordinateIndex = 0; coordinateIndex < 4; coordinateIndex++) 
+	void CreateTetrisPiece( int[,] coordinates, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
+	{
+
+		for (int coordinateIndex = 0; coordinateIndex < ( coordinates.Length / 2 ); coordinateIndex++) 
 		
 		{
 			List < GameObject > refreshedTiles = new List < GameObject > ( availableTiles );
@@ -72,7 +66,7 @@ public class CakeLayer : MonoBehaviour {
 			int column = coordinates [ coordinateIndex, 0 ];
 			int row = coordinates [ coordinateIndex, 1 ];
 
-			List<bool> sideExposures = getTilePieceSideExposure( tetrisShape, coordinateIndex );
+			List<bool> sideExposures = getTilePieceSideExposure( coordinates, coordinateIndex );
 
 			GameObject newTile = makeNewFittedTile( refreshedTiles, sideExposures, column, row, centerPosition );
 			//instantiate tile at scaled size at coordinate
@@ -106,8 +100,7 @@ public class CakeLayer : MonoBehaviour {
 		return area;
 
 	}
-
-
+	
 
 	int getTileAndRotation( CakeTile tileScript, List<bool> sideExposures )
 	{
@@ -134,10 +127,11 @@ public class CakeLayer : MonoBehaviour {
 
 			//randomly choose a tile from available tile and remove it from list of available tiles
 			int random = Random.Range( 0, availableTiles.Count );
+//			Debug.Log ("random : " + random);
 			GameObject possibleTile = availableTiles[ random ];
+//			Debug.Log (possibleTile.name);
 
 			availableTiles.RemoveAt( random );
-
 
 			//get tile script
 			CakeTile tileScript = ( CakeTile ) possibleTile.GetComponent(typeof(CakeTile));
@@ -149,7 +143,6 @@ public class CakeLayer : MonoBehaviour {
 			{
 				return CreateNewTile( possibleTile, column, row, rotation, fittedTile, centerPosition );
 			}
-
 
 		}
 
@@ -191,82 +184,75 @@ public class CakeLayer : MonoBehaviour {
 		}
 		return true;
 	}
+	
 
-	int[,] getTetrisPieceCoordinates ( string tetrisShape )
+	List<int> GetNeighborCoordinateOffsets( int sideIndex )
 	{
-		switch ( tetrisShape )
+
+		int xOffset;
+		int yOffset;
+		List<int> offsets = new List<int> ();
+
+		switch( sideIndex )
 		{
-			case "square":
-				return squareCoordinates;
-			case "line":
-				return lineCoordinates;
-			case "LShape":
-				return LShapeCoordinates;
-			default:
-			Debug.Log (" not valid tetris shape found");
-			return squareCoordinates;
+		case 0: //left side
+			xOffset = -1;
+			yOffset = 0;
+			break;
+		case 1: //top side
+			xOffset = 0;
+			yOffset = 1;
+			break;
+		case 2: //right side
+			xOffset = 1;
+			yOffset = 0;
+			break;
+		case 3: //bottom side
+			xOffset = 0;
+			yOffset = -1;
+			break;
+		default: 	
+			Debug.Log ("not a valid sideIndex");
+			xOffset = 0;
+			yOffset = 0;
+			break;
 		}
+
+		offsets.Add (xOffset);
+		offsets.Add (yOffset);
+		return offsets;
 	}
 
-	List<bool> getTilePieceSideExposure ( string tetrisShape, int coordinateIndex )
+	List<bool> getTilePieceSideExposure ( int[,] coordinates, int coordinateIndex )
 	{
-		bool exposed = true;
+		int currentSideX = coordinates [coordinateIndex, 0 ];
+		int currentSideY = coordinates [coordinateIndex, 1 ];
+		List<bool> sideExposures = new List<bool>();
 
-		switch ( tetrisShape )
+
+		//iterate 4 times to get left, top, top and right side
+		for( int sideIndex = 0; sideIndex < 4; sideIndex ++ )
 		{
-			case "square":
-			switch ( coordinateIndex )
+			bool exposed = true;
+			List<int> coordinateOffsets = GetNeighborCoordinateOffsets( sideIndex );
+			int xOffset = coordinateOffsets[ 0 ];
+			int yOffset = coordinateOffsets[ 1 ];
+
+			for( int coordinate = 0; coordinate < ( coordinates.Length / 2 ); coordinate ++ )
 			{
-			case 0:
-				return new List< bool > ( new bool[] { exposed, !exposed, !exposed, exposed } );
-			case 1:
-				return new List< bool > ( new bool[] { exposed, exposed, !exposed, !exposed });
-			case 2:
-				return new List< bool > ( new bool[] { !exposed, exposed, exposed, !exposed });
-			case 3:
-				return new List< bool > ( new bool[] { !exposed, !exposed, exposed, exposed });
-			default:
-				Debug.Log ("not corresponding coordinateIndex");
-				return new List< bool > ( new bool[] { exposed, !exposed, !exposed, exposed } );
+				//if there is another tile found in the coordinate list with the above offset
+				if( (( currentSideX + xOffset ) == coordinates[ coordinate, 0 ]) && (( currentSideY + yOffset ) == coordinates[ coordinate, 1 ]))
+				{
+					exposed = false;
+
+				}
 			}
 
-		case "line":
-			switch ( coordinateIndex )
-			{
-			case 0:
-				return new List< bool > ( new bool[] { exposed, !exposed, exposed, exposed } );
-			case 1:
-				return new List< bool > ( new bool[] { exposed, !exposed, exposed, !exposed });
-			case 2:
-				return new List< bool > ( new bool[] { exposed, !exposed, exposed, !exposed });
-			case 3:
-				return new List< bool > ( new bool[] { exposed, exposed, exposed, !exposed });
-			default:
-				Debug.Log ("not corresponding coordinateIndex");
-				return new List< bool > ( new bool[] { exposed, !exposed, !exposed, exposed } );
-			}
+			sideExposures.Add ( exposed );
 
-		case "LShape":
-			switch ( coordinateIndex )
-			{
-			case 0:
-				return new List< bool > ( new bool[] { !exposed, exposed, exposed, exposed } );
-			case 1:
-				return new List< bool > ( new bool[] { exposed, !exposed, !exposed, exposed });
-			case 2:
-				return new List< bool > ( new bool[] { exposed, !exposed, exposed, !exposed });
-			case 3:
-				return new List< bool > ( new bool[] { exposed, exposed, exposed, !exposed });
-			default:
-				Debug.Log ("not corresponding coordinateIndex");
-				return new List< bool > ( new bool[] { exposed, exposed, !exposed, exposed } );
-			}
-			
-		default:
-			Debug.Log ("not corresponding coordinateIndex");
-			return new List< bool > ( new bool[] { exposed, !exposed, exposed, !exposed } );
 		}
 
+		return sideExposures;
 	}
 
 	public void ChangeChildrenColor()
@@ -279,22 +265,6 @@ public class CakeLayer : MonoBehaviour {
 			child.renderer.material.color = frostingColor;
 		}
 	}
-
-//	void DestroyCurrentChildren()
-//	{
-//
-//		Transform parent = gameObject.transform;
-//
-//		foreach (Transform child in parent) 
-//		{
-//			Destroy(child.gameObject);
-//		}
-//
-//		gameObject.transform.DetachChildren ();
-//
-//	}
-
-	
 
 }
 

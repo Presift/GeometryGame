@@ -15,8 +15,8 @@ public class GameModel : MonoBehaviour
 	public int minLevel = 0;
 	public int maxLevel = 6;
 	public int currentLevel = 0;
-	public int minLayersInTier = 0;
-	public int maxLayersInTier = 4;
+//	public int minLayersInTier = 1;
+//	public int maxLayersInTier = 4;
 	public int minTiersInCake = 2;
 	public int maxTiersInCake = 5;
 
@@ -39,6 +39,36 @@ public class GameModel : MonoBehaviour
 	public int score = 0;
 
 	public Selection selectionManager;
+
+	List<int[,]> fourTilePieces = new List <int[,]>();
+	List<int[,]> fiveTilePieces = new List <int[,]>();
+	List<int[,]> threeTilePieces = new List <int[,]>();
+
+	//four tile pieces
+	int[,] squareCoordinates = {{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }}; 
+	
+	int[,] line4Coordinates = {{ 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }}; 
+	
+	int[,] LShapeCoordinates = {{ 1, 0 }, { 0, 0 }, { 0, 1 }, { 0, 2 }}; 
+	
+	int[,] topHatCoordinates = {{ 0, 0 }, { 1, 0 }, { 2, 0 }, { 1, 1 }};
+
+	int[,] zigZagCoordinates = {{ 0, 0 }, { 1, 0 }, { 1, 1 }, { 2, 1 }};
+
+	//five tile pieces
+	int[,] line5Coordinates = {{ 1, 0 }, { 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 }};
+	
+	int[,] crossCoordinates = {{ 0, 1 }, { 1, 0 }, { 1, 1 }, { 2, 1 }, { 1, 2 } };
+
+	int[,] bucketCoordinates = {{ 0, 1 }, { 0, 0 }, { 1, 0 }, { 2, 0 }, { 2, 1 } };
+
+	int[,] snakeCoordinates = {{ 0, 0 }, { 1, 0 }, { 1, 1 }, { 2, 1 }, { 2, 2 } };
+
+	//three tile pieces
+	int[,] line3Coordinates = {{ 0, 0 }, { 0, 1 }, { 0, 2 }}; 
+
+	int[,] corner3Coordinates = {{ 0, 0 }, { 0, 1 }, { 1, 0 }}; 
+
 
 	// Use this for initialization
 	void Awake () {
@@ -63,6 +93,22 @@ public class GameModel : MonoBehaviour
 	{
 		scoreDisplay.text = "Score : " + score;
 
+		fourTilePieces.Add (squareCoordinates);
+		fourTilePieces.Add (line4Coordinates);
+		fourTilePieces.Add (LShapeCoordinates);
+		fourTilePieces.Add (topHatCoordinates);
+		fourTilePieces.Add (zigZagCoordinates);
+		
+		fiveTilePieces.Add (line5Coordinates);
+		fiveTilePieces.Add (crossCoordinates);
+		fiveTilePieces.Add (bucketCoordinates);
+		fiveTilePieces.Add (snakeCoordinates);
+
+		threeTilePieces.Add (line3Coordinates);
+		threeTilePieces.Add (corner3Coordinates);
+
+		selectionManager.ShowNewProblem();
+
 	}
 	
 	// Update is called once per frame
@@ -74,21 +120,65 @@ public class GameModel : MonoBehaviour
 			selectionManager.ShowNewProblem();
 		}
 	}
-	
-	public Vector3 CakeTierStartPosition( int tierCount, int tierIndex )
+
+	public int[,] PieceCoordinates( int tileCount)
 	{
-		float distanceFromLeft = (horizontalWorldDistance / (tierCount + 1)) * (tierIndex + 1);
-		Vector3 tierPosition = new Vector3 (distanceFromLeft, -2, 0) + leftScreen;
-		return tierPosition;
+		int random;
+		switch (tileCount) 
+		{
+		case 3:
+//			Debug.Log (" tile count : " + tileCount );
+			random = Random.Range( 0, threeTilePieces.Count );
+//			Debug.Log ("random : " + random);
+			return threeTilePieces[ random ];
+		case 4:
+//			Debug.Log (" tile count : " + tileCount );
+			random = Random.Range( 0, fourTilePieces.Count );
+//			Debug.Log ("random : " + random);
+			return fourTilePieces[ random ];
+		case 5:
+//			Debug.Log (" tile count : " + tileCount );
+			random = Random.Range( 0, fiveTilePieces.Count );
+//			Debug.Log ("random : " + random);
+			return fiveTilePieces[ random ];
+		default:
+			Debug.Log (" not a valid tile count for piece coordinates");
+			random = Random.Range( 0, fourTilePieces.Count );
+			return fourTilePieces[ random ];
+		}
 	}
 
-	public float MaxTileSize( int tilesToFit )
+	public List<Vector3> CakeTierStartPositions( float maxTileSize, List<Vector2> cakeSizesInTiles, int totalTilesAcross )
+	{
+		int tierCount = cakeSizesInTiles.Count;
+		float widthOfSpacer = (horizontalWorldDistance - (totalTilesAcross * maxTileSize)) / (tierCount + 1);
+		List<Vector3> cakeTierPositions = new List<Vector3> ();
+		Vector3 startPositionOfTileSpace = new Vector3(leftScreen.x, -2, 0 );
+//		Debug.Log (" far left : " + startPositionOfTileSpace);
+		for (int tier = 0; tier< tierCount; tier++) 
+		{
+			float tilesAcrossInThisTier = cakeSizesInTiles[ tier ].x;
+			float widthOfPiece = tilesAcrossInThisTier * maxTileSize;
+//			float spaceForThisPiece = ((tilesAcrossInThisTier/2 + 1) * maxTileSize);
+			Vector3 startPositionOfPiece = startPositionOfTileSpace + new Vector3( widthOfSpacer, 0, 0);
+//			Debug.Log ( "start position of piece : " + startPositionOfPiece);
+			startPositionOfTileSpace = startPositionOfPiece + new Vector3( widthOfPiece, 0, 0 );
+//			Debug.Log ( "new far left : " + startPositionOfPiece);
+			cakeTierPositions.Add (startPositionOfPiece);
+//			Debug.Log (" tier " + tier + " : " + startPositionOfPiece );
+		}
+
+		return cakeTierPositions;
+	}
+
+	public float MaxTileSize( int tierCount, int tilesToFitAcross, int tileToFitDown )
 	{
 		//get height of world from camera
 		float height = Camera.main.orthographicSize * 2.0f;
 		float width = height * Screen.width/Screen.height;
-		float maxTileSize = width/ tilesToFit;
-		
+		float maxTileWidth = width/ ( tilesToFitAcross + (tierCount + 1)); //includes space on left and right of each tier
+		float maxTileHeight = height / (tileToFitDown * 2);  //how many tiles fit in half height of screen
+		float maxTileSize = Mathf.Min (maxTileWidth, maxTileHeight);
 		return maxTileSize;
 	}
 
@@ -103,14 +193,64 @@ public class GameModel : MonoBehaviour
 		return (scaleChange * originalTileHeight);
 	}
 
-	public List<GameObject> GetAvailableTiles()
+	public List<int> GetPossibleTileCountsByLevel()
+	{
+		List<int> possibleTileCounts = new List<int>();
+		if (currentLevel >= 0 ) 
+		{
+			possibleTileCounts.Add ( 4 );
+		}
+		if( currentLevel >= 2 )
+		{
+			possibleTileCounts.Add ( 3 );
+		}
+		if( currentLevel >= 4 )
+		{
+			possibleTileCounts.Add ( 5 );
+		}
+
+		return possibleTileCounts;
+	}
+
+	public int GetLayerCount( int tileCount )  // based on tile count and level, make this more random later
+	{
+		switch (tileCount) 
+		{
+		case 3:
+			if( currentLevel < 4 )
+			{
+				return 2;
+			}
+			else
+			{
+				return 3;
+			}
+		case 4:
+			if( currentLevel < 4 )
+			{
+				return 1;
+			}
+			else
+			{
+				return 2;
+			}
+		case 5:
+			return 1;
+		default :
+			Debug.Log ("not valid tile count");
+			return 1;
+				}
+	}
+	
+
+	public List<GameObject> GetAvailableTilesByLevel()
 	{
 		List<GameObject> availableTiles = new List<GameObject>();
 		
 		availableTiles.Add (cubeTile);
 		availableTiles.Add (isoTile);
 
-		if (currentLevel >= 2) 
+		if (currentLevel >= 1) 
 		{
 			availableTiles.Add (roundTile);
 		}
@@ -148,20 +288,7 @@ public class GameModel : MonoBehaviour
 //		Debug.Log (numberOfTiers);
 		return numberOfTiers;
 	}
-
-	public List<string> GetTetrisShapes()
-	{
-		List<string> tetrisShapes = new List<string> ();
-		tetrisShapes.Add ("line");
-		tetrisShapes.Add ("square");
-
-		if (currentLevel >= 1 ) 
-		{
-			tetrisShapes.Add ("LShape");
-		}
-
-		return tetrisShapes;
-	}
+	
 
 	void ChangeLevel()
 	{
@@ -193,7 +320,7 @@ public class GameModel : MonoBehaviour
 		else 
 		{
 			correctAnswersInARow = 0;
-			currentLevel = Mathf.Max(minLevel, currentLevel - 1 );
+//			currentLevel = Mathf.Max(minLevel, currentLevel - 1 );
 			Debug.Log ("leveled down");
 		}
 
