@@ -56,18 +56,10 @@ public class CakePlate : MonoBehaviour {
 	public Vector3 TierPositionOnPlate( float tierHeight )
 	{
 		float centerOffset = (( tierHeight / singleTierHeight ) - 1) / 2 * singleTierHeight;
-		Debug.Log ("center offset : " + centerOffset);
-
-//		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + tierHeight + centerOffset ) / 2, 0 );
-//		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + tierHeight ) / 2, 0 );
 		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + singleTierHeight ) / 2, 0 );
-
 
 		previousTierHeight = tierHeight;
 		previousTierCenterPositionOnPlate = newTierPosition + new Vector3( 0, centerOffset, 0);
-		Debug.Log (" tier height : " + tierHeight);
-		Debug.Log (" tier position : " + newTierPosition);
-//		Debug.Log (newTierPosition);
 		return newTierPosition;
 	}
 

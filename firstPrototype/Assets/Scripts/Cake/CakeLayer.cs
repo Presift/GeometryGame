@@ -15,9 +15,11 @@ public class CakeLayer : MonoBehaviour {
 	public float area;
 
 	public Selection selectionManager;
-//	public GameModel gameManager;
+
+	int roundTilesUsed = 0;
 
 	public Color frostingColor;
+	public Material cakeColor;
 
 	// Use this for initialization
 	void Awake () {
@@ -29,14 +31,15 @@ public class CakeLayer : MonoBehaviour {
 
 	}
 
-	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
+	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript, Material cakeMaterial, int maxRoundTiles )
 
 	{
+		cakeColor = cakeMaterial;
 		scaleChange = newScaleChange;
 		tileSize = newTileSize;
 		defaultTile = newDefaultTile;
 
-		CreateTetrisPiece( pieceCoordinates, centerPosition, availableTiles, tierScript );
+		CreateTetrisPiece( pieceCoordinates, centerPosition, availableTiles, tierScript, maxRoundTiles );
 		area = CalculateArea();
 
 		return area;
@@ -52,16 +55,32 @@ public class CakeLayer : MonoBehaviour {
 		}
 		
 		gameObject.transform.DetachChildren ();
+		roundTilesUsed = 0;
 	}
 
 
-	void CreateTetrisPiece( int[,] coordinates, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript )
+	void CreateTetrisPiece( int[,] coordinates, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript, int maxRoundTiles )
 	{
 
 		for (int coordinateIndex = 0; coordinateIndex < ( coordinates.Length / 2 ); coordinateIndex++) 
 		
 		{
 			List < GameObject > refreshedTiles = new List < GameObject > ( availableTiles );
+
+			//if max round tiles used
+			if( roundTilesUsed >= maxRoundTiles )
+			{
+				for( int tileIndex = 0; tileIndex < availableTiles.Count; tileIndex++ )
+				{
+					GameObject tile = availableTiles[ tileIndex ];
+//					Debug.Log ( tile.name );
+					if( tile.name == "round" )
+					{
+						availableTiles.Remove( tile );
+						Debug.Log (" round removed from available tiles ");
+					}
+				}
+			}
 
 			int column = coordinates [ coordinateIndex, 0 ];
 			int row = coordinates [ coordinateIndex, 1 ];
@@ -127,7 +146,7 @@ public class CakeLayer : MonoBehaviour {
 
 			//randomly choose a tile from available tile and remove it from list of available tiles
 			int random = Random.Range( 0, availableTiles.Count );
-//			Debug.Log ("random : " + random);
+
 			GameObject possibleTile = availableTiles[ random ];
 //			Debug.Log (possibleTile.name);
 
@@ -159,6 +178,14 @@ public class CakeLayer : MonoBehaviour {
 		fittedTile = (GameObject)Instantiate( newTile, new Vector3( column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z ), Quaternion.identity);
 		CakeTile fittedTileScript = ( CakeTile ) fittedTile.GetComponent(typeof(CakeTile));
 		fittedTileScript.SetNewPerimetersAfterRotation( rotation );
+		fittedTile.renderer.material = cakeColor;
+
+		//if fitted tile is round
+//		Debug.Log (" fitted tile name : " + fittedTileScript.name);
+		if (fittedTileScript.name.Contains( "round" )) 
+		{
+			roundTilesUsed ++;
+		}
 		return fittedTile;
 	}
 

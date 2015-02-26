@@ -15,8 +15,7 @@ public class Selection : MonoBehaviour {
 
 	public GameObject correctAnswerImage;
 	public GameObject incorrectAnswerImage;
-
-	GameObject feedbackImage;
+	public GameObject arrow;
 
 	bool showFeedback = false;
 
@@ -36,7 +35,6 @@ public class Selection : MonoBehaviour {
 	void Start () {
 		cakeLayer = (GameObject)Resources.Load("Cake Layer");
 		cakeTier = (GameObject)Resources.Load ("Cake Tier");
-//		ShowNewProblem ();
 	}
 	
 	// Update is called once per frame
@@ -53,11 +51,13 @@ public class Selection : MonoBehaviour {
 		WipePreviousProblem ();
 		cakePlate.WipeCakePlate ();
 
-		int numberOfTiers = gameManager.NumberOfTiersByLevel ();
+		float minVolDiff = gameManager.minVolumeDifference;
+		int numberOfTiers = gameManager.numberOfTiers;
+		int maxRoundTilesPerTier = gameManager.maxRoundTilesPerTier;
 
 		List <GameObject> availableTiles = gameManager.GetAvailableTilesByLevel ();
 
-		List<int> possibleTileCounts = gameManager.GetPossibleTileCountsByLevel ();
+		List<int> possibleTileCounts = new List<int>();
 
 		List<int[,]> allLayerCoordinates = new List<int[,]> ();
 		List<Vector2> layerSizes = new List<Vector2> ();
@@ -65,8 +65,16 @@ public class Selection : MonoBehaviour {
 		int totalTilesDown = 0;
 		for (int newTier = 0; newTier < numberOfTiers; newTier++) 
 		{
+
+			if( possibleTileCounts.Count == 0 )
+			{
+				possibleTileCounts = gameManager.GetPossibleTileCounts ();
+
+			}
 			int random = Random.Range (0, possibleTileCounts.Count );
-			int[,] pieceCoordinates = GetPieceCoordinatesFromTileCount( possibleTileCounts, random );
+			int tileCount = possibleTileCounts[ random ];
+			possibleTileCounts.RemoveAt ( random );
+			int[,] pieceCoordinates = gameManager.PieceCoordinates( tileCount );
 			allLayerCoordinates.Add ( pieceCoordinates );
 			Vector2 layerSizeInTiles = GetSizeOfPieceFromCoordinates( pieceCoordinates );
 			layerSizes.Add (layerSizeInTiles);
@@ -78,14 +86,13 @@ public class Selection : MonoBehaviour {
 		float tileSize = gameManager.MaxTileSize( numberOfTiers, totalTilesAcross, totalTilesDown );
 		float scaleChange = gameManager.ScaleChange( tileSize );
 		float tileHeight = gameManager.TileHeight( scaleChange );
-		cakePlate.singleTierHeight = tileHeight * 1.25f;
+		cakePlate.singleTierHeight = tileHeight * (1 + gameManager.frostingHeightMultiplier );
 
 		List<Vector3> tierStartPositions = gameManager.CakeTierStartPositions (tileSize, layerSizes, totalTilesAcross);
 
 		for (int newTier = 0; newTier < numberOfTiers; newTier++) 
 		{
 			int[,] pieceCoordinates = allLayerCoordinates[newTier];
-			int layerCount = gameManager.GetLayerCount( ( pieceCoordinates.Length/2) );
 
 			int tilesAcross = (int)layerSizes[ newTier ].x;
 			int tilesDown = (int)layerSizes[ newTier ].y;
@@ -93,7 +100,7 @@ public class Selection : MonoBehaviour {
 			//get position for new tier
 			Vector3 startPosition = tierStartPositions[ newTier ];
 
-
+			Material cakeColor = gameManager.CakeColor( newTier );
 			//create new cake tier
 			GameObject newCakeTier = (GameObject)Instantiate( cakeTier, new Vector3( 0, 0, 0), Quaternion.identity);
 			newCakeTier.name = "Cake Tier " + newTier;
@@ -105,19 +112,103 @@ public class Selection : MonoBehaviour {
 			CakeTier tierScript = (CakeTier)newCakeTier.GetComponent(typeof(CakeTier));
 			tierScript.manager = gameManager;
 			tierScript.selectionManager = this;
-			tierScript.NewCakeTier( pieceCoordinates, layerCount, tileSize, tileHeight, scaleChange, gameManager.cubeTile, startPosition, tierScript, availableTiles, volumeOrder );
+			tierScript.NewCakeTier( pieceCoordinates, tileSize, tileHeight, scaleChange, gameManager.cubeTile, startPosition, tierScript, availableTiles, volumeOrder, cakeColor, gameManager.frostingHeightMultiplier, minVolDiff, maxRoundTilesPerTier );
 
 
 			currentCakeTiers.Add ( tierScript );
 			volumeOrder.Add ( tierScript.volume );
 
 		}
-		
+
+		//cake tiers ordered by smallest to largest volumes
+		currentCakeTiers.Sort (
+			delegate ( CakeTier tier1, CakeTier tier2)
+			{
+				return tier1.volume.CompareTo( tier2.volume );
+			}
+		);
+
+		List<int> bestLayerConfigs = new List<int>();
+
+		volumeOrder.Sort ();
+		List<float> originalVolumes = volumeOrder;  //sorted from smallest to greatest
+		float bestVolumeDiff = AverageVolumeDiff ( volumeOrder, minVolDiff );
+
+		int maxLayer = gameManager.maxLayerInTier;
+		int iterations = ( int ) Mathf.Pow (maxLayer, numberOfTiers);
+
+		for (int configAttempt = iterations -1; configAttempt > 0; configAttempt-- ) 
+		{
+			int remainder = configAttempt;
+			List<int> newLayerConfig = new List<int>();
+			List<float> newVolumes = new List<float>();
+
+			for ( int tier = numberOfTiers; tier > 0; tier-- )
+			{
+				int addLayerCount = remainder / (int)Mathf.Pow( maxLayer, ( tier - 1 ));
+				remainder -= addLayerCount * (int)Mathf.Pow ( maxLayer, (tier - 1 ));
+				newLayerConfig.Add ( addLayerCount );
+				float newLayerVolume = ( addLayerCount + 1 ) * originalVolumes[ numberOfTiers - tier ];
+				newVolumes.Add ( newLayerVolume );
+			}
+
+			newVolumes.Sort ();
+
+			float newAvgVolumeDiff = AverageVolumeDiff( newVolumes, minVolDiff );
+			//if avg volume diff is not below min diff and is less than best volume diff
+			if( newAvgVolumeDiff!= - 1 )
+			{
+				if( newAvgVolumeDiff < bestVolumeDiff )
+				{
+					bestLayerConfigs = newLayerConfig;
+					bestVolumeDiff = newAvgVolumeDiff;
+					volumeOrder = newVolumes;
+				}
+				else if( newAvgVolumeDiff == bestVolumeDiff && bestLayerConfigs.Count == 0 )
+				{
+					Debug.Log ( " best min diff was equal ");
+					bestLayerConfigs = newLayerConfig;
+					bestVolumeDiff = newAvgVolumeDiff;
+					volumeOrder = newVolumes;
+				}
+			}
+
+		}
+
+		//set cake layers based on optimal differences
+
+		if( bestLayerConfigs.Count != 0 )
+		{
+			for ( int tier = 0; tier < numberOfTiers; tier++ )
+			{
+				int additionalLayer = bestLayerConfigs[ tier ];
+				currentCakeTiers[ tier ].MakeAdditionalLayers( additionalLayer );
+				currentCakeTiers[ tier ].volume *= ( additionalLayer + 1 );
+			}
+		}
+
+
 		SetVolumeOrder();
 
 		//unlock answer input
 		LockInput (false);
 	
+	}
+
+	float AverageVolumeDiff( List<float> orderedVolumes, float minDifference )
+	{
+		float totalVolumeSpaces = 0;
+		for (int volume = 1; volume < orderedVolumes.Count; volume++) 
+		{
+			float volumeDiff = orderedVolumes[ volume ] - orderedVolumes[ volume - 1 ];
+			totalVolumeSpaces += volumeDiff;
+			if( volumeDiff < minDifference )
+			{
+				return -1;
+			}
+		}
+		float avgVolumeDiff = totalVolumeSpaces / (orderedVolumes.Count - 1);
+		return avgVolumeDiff;
 	}
 
 	Vector2 GetSizeOfPieceFromCoordinates( int[,] pieceCoordinates )
@@ -158,12 +249,6 @@ public class Selection : MonoBehaviour {
 		return new Vector2 (tilesAcross + 1 , tilesDown + 1);
 	}
 
-	int[,] GetPieceCoordinatesFromTileCount( List<int> tileCounts, int random )
-	{
-		int tileCount = tileCounts[ random ];
-		int[,] pieceCoordinates = gameManager.PieceCoordinates( tileCount );
-		return pieceCoordinates;
-	}
 
 	void WipePreviousProblem()
 	{
@@ -184,7 +269,7 @@ public class Selection : MonoBehaviour {
 	public bool IsSelectionCorrect( CakeTier selection )
 	{
 		Vector3 feedbackPosition;
-
+		GameObject feedbackImage;
 
 		feedbackPosition = new Vector3( selection.centerPosition.x, selection.centerPosition.y, -1 );
 	
@@ -198,28 +283,47 @@ public class Selection : MonoBehaviour {
 			currentCakeTiers.Remove( selection );
 			feedbackImage = correctAnswerImage;
 			gameManager.UpdateStatsAndLevel( true );
-			ShowFeedback (feedbackPosition);
+			ShowFeedback ( feedbackImage, feedbackPosition, 0 );
 			return true;
 		}
 		else
 		{
+			LockInput ( true );
 			feedbackImage = incorrectAnswerImage;
+			//show correct answer
 			gameManager.UpdateStatsAndLevel( false );
-			ShowFeedback (feedbackPosition);
+			ShowFeedback ( feedbackImage, feedbackPosition, -1 );
+			ShowCorrectAnswer();
 			return false;
 		}
 	}
 
-	void ShowFeedback( Vector3 position )
+	void ShowCorrectAnswer()
 	{
-		//lock answer input
-//		LockInput ( true );
+		//get correct cake
+		CakeTier correctSelection = null;
+		Vector3 feedbackPosition;
 
+		for(  int cakeTier = 0; cakeTier < currentCakeTiers.Count; cakeTier ++ )
+		{
+			if( currentCakeTiers[ cakeTier ].volume == volumeOrder[ 0 ] )
+			{
+				correctSelection = currentCakeTiers [ cakeTier ];
+			}
+		}
+
+
+		feedbackPosition = new Vector3( correctSelection.centerPosition.x, correctSelection.centerPosition.y - (correctSelection.tierHeight / 2 ), -1 );
+		ShowFeedback ( arrow, feedbackPosition, -1 );
+	}
+
+	void ShowFeedback( GameObject feedbackImage, Vector3 position, float startTime )
+	{
 		feedbackImage.transform.position = position;
 		feedbackImage.SetActive (true);
 		//start countdown
 		showFeedback = true;
-		timeShowingFeeback = 0;
+		timeShowingFeeback = startTime;
 	}
 
 	void FeedbackTimer()
@@ -230,22 +334,37 @@ public class Selection : MonoBehaviour {
 		}
 		else
 		{
-			feedbackImage.SetActive( false );
+			bool correctAnswer = !arrow.activeInHierarchy;
+
+			WipeFeedback();
 			showFeedback = false;
 
-			//if volumeOrder list is empty
-			if( volumeOrder.Count == 0 )
-			{
-				//show final cake
-				cakePlate.rotating = true;
+			NextStep( correctAnswer );
 
-			}
-			else
-			{
-//				LockInput ( false );
-			}
-				
 		}
+	}
+
+	void NextStep( bool correctAnswer )
+	{
+		if( !correctAnswer )
+		{
+			ShowNewProblem();
+			return;
+		}
+
+		if( volumeOrder.Count == 0 )
+		{
+			//show final cake
+			cakePlate.rotating = true;
+		}
+		return;
+	}
+	
+	public void WipeFeedback()
+	{
+		correctAnswerImage.SetActive ( false );
+		incorrectAnswerImage.SetActive ( false );
+		arrow.SetActive (false);
 	}
 
 	void LockInput( bool locked )

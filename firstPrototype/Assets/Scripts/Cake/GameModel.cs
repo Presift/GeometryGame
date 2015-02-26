@@ -5,20 +5,28 @@ using System.Collections.Generic;
 
 public class GameModel : MonoBehaviour 
 {
-//	public GameObject mainCamera;
 	public GameObject canvas;
 
 	public Text scoreDisplay;
+	public Text levelDisplay;
+	public Text finalScoreDisplay;
+
+	public GameObject endGameDisplay;
 
 	public int pointsForCorrect;
 
+	public int numberOfTiers;
+
 	public int minLevel = 0;
-	public int maxLevel = 6;
+	public int maxLevel = 15;
 	public int currentLevel = 0;
-//	public int minLayersInTier = 1;
-//	public int maxLayersInTier = 4;
 	public int minTiersInCake = 2;
 	public int maxTiersInCake = 5;
+	public int maxLayerInTier = 1;
+	public int maxRoundTilesPerTier = 0;
+
+	public List<int> possibleTileCounts;
+	public List<GameObject> availableTiles;
 
 	public int correctAnswersInARow = 0;
 	public int correctInARowForLevelUp = 3;
@@ -38,12 +46,30 @@ public class GameModel : MonoBehaviour
 
 	public int score = 0;
 
+	public float timeInLevel = 0;
+	public float timeLimit = 180;
+	public bool levelIsTimed = true;
+
+	public float minVolumeDifference;
+
 	public Selection selectionManager;
 
+	public float frostingHeightMultiplier = .25f;  // multiplied by single cake tier height to get frosting height
+	public Material chocolate;
+	public Material vanilla;
+
+	List<int[,]> twoTilePieces = new List <int[,]>();
 	List<int[,]> fourTilePieces = new List <int[,]>();
 	List<int[,]> fiveTilePieces = new List <int[,]>();
 	List<int[,]> threeTilePieces = new List <int[,]>();
 
+	//two tile pieces
+	int[,] line2Coordinates = {{ 0, 0 }, { 0, 1 }};
+
+	//three tile pieces
+	int[,] line3Coordinates = {{ 0, 0 }, { 0, 1 }, { 0, 2 }}; 
+	
+	int[,] corner3Coordinates = {{ 0, 0 }, { 0, 1 }, { 1, 0 }}; 
 	//four tile pieces
 	int[,] squareCoordinates = {{ 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 }}; 
 	
@@ -64,10 +90,7 @@ public class GameModel : MonoBehaviour
 
 	int[,] snakeCoordinates = {{ 0, 0 }, { 1, 0 }, { 1, 1 }, { 2, 1 }, { 2, 2 } };
 
-	//three tile pieces
-	int[,] line3Coordinates = {{ 0, 0 }, { 0, 1 }, { 0, 2 }}; 
 
-	int[,] corner3Coordinates = {{ 0, 0 }, { 0, 1 }, { 1, 0 }}; 
 
 
 	// Use this for initialization
@@ -86,12 +109,16 @@ public class GameModel : MonoBehaviour
 		rightScreen = Camera.main.ScreenToWorldPoint (new Vector3(Screen.width, 0, 0 ));
 		horizontalWorldDistance = Mathf.Abs (rightScreen.x - leftScreen.x);
 
-//		Debug.Log (leftScreen);
+
 	}
 
 	void Start()
 	{
 		scoreDisplay.text = "Score : " + score;
+		levelDisplay.text = "Level " + ( currentLevel + 1 );
+//		levelDisplay.fontSize
+
+		twoTilePieces.Add (line2Coordinates);
 
 		fourTilePieces.Add (squareCoordinates);
 		fourTilePieces.Add (line4Coordinates);
@@ -107,7 +134,9 @@ public class GameModel : MonoBehaviour
 		threeTilePieces.Add (line3Coordinates);
 		threeTilePieces.Add (corner3Coordinates);
 
+		UpdateLevelingStats ();
 		selectionManager.ShowNewProblem();
+
 
 	}
 	
@@ -119,27 +148,71 @@ public class GameModel : MonoBehaviour
 		{
 			selectionManager.ShowNewProblem();
 		}
+
+		if(levelIsTimed)
+		{
+			TimeLevel();
+		}
 	}
 
-	public int[,] PieceCoordinates( int tileCount)
+//	public SetFontSize()
+//	{
+//		if (Screen.dpi > 100 && Screen.dpi < 200 || Screen.dpi==0){
+//			//iPad 1 & 2 : 132 ppi, macBookAir 11' : 135 ppi, ipadMini 1 : 163 ppi
+//			return;
+//		}else if (Screen.dpi >= 200 && Screen.dpi <275){
+//			//iPad 3 & 4 : 264 ppi;
+//			shogun.fontSize *= 3;
+//			return;
+//		}else{
+//			//iPad mini 2 : 326 ppi
+//			shogun.fontSize *= 3.6;
+//		}
+//	}
+
+	void TimeLevel()
+	{
+		if (timeInLevel < timeLimit) 
+		{
+			timeInLevel += Time.deltaTime;
+
+		}
+		else
+		{
+			//show "time up"
+			finalScoreDisplay.text += " " + score;
+			endGameDisplay.SetActive( true );
+			levelIsTimed = false;
+		}
+	}
+
+
+
+	public Material CakeColor( int index )
+	{
+		if( index % 2 == 0 )
+		{
+			return chocolate;
+		}
+		return vanilla;
+	}
+
+	public int[,] PieceCoordinates( int tileCount )
 	{
 		int random;
 		switch (tileCount) 
 		{
+		case 2:
+			random = Random.Range( 0, twoTilePieces.Count );
+			return twoTilePieces[ random ];
 		case 3:
-//			Debug.Log (" tile count : " + tileCount );
 			random = Random.Range( 0, threeTilePieces.Count );
-//			Debug.Log ("random : " + random);
 			return threeTilePieces[ random ];
 		case 4:
-//			Debug.Log (" tile count : " + tileCount );
 			random = Random.Range( 0, fourTilePieces.Count );
-//			Debug.Log ("random : " + random);
 			return fourTilePieces[ random ];
 		case 5:
-//			Debug.Log (" tile count : " + tileCount );
 			random = Random.Range( 0, fiveTilePieces.Count );
-//			Debug.Log ("random : " + random);
 			return fiveTilePieces[ random ];
 		default:
 			Debug.Log (" not a valid tile count for piece coordinates");
@@ -147,29 +220,26 @@ public class GameModel : MonoBehaviour
 			return fourTilePieces[ random ];
 		}
 	}
+	
 
 	public List<Vector3> CakeTierStartPositions( float maxTileSize, List<Vector2> cakeSizesInTiles, int totalTilesAcross )
 	{
 		int tierCount = cakeSizesInTiles.Count;
-		float widthOfSpacer = (horizontalWorldDistance - (totalTilesAcross * maxTileSize)) / (tierCount + 1);
+		float widthOfSpacer = ( horizontalWorldDistance - (totalTilesAcross * maxTileSize)) / (tierCount + 1 );
 		List<Vector3> cakeTierPositions = new List<Vector3> ();
-		Vector3 startPositionOfTileSpace = new Vector3(leftScreen.x, -2, 0 );
-//		Debug.Log (" far left : " + startPositionOfTileSpace);
+		Vector3 startPositionOfTileSpace = new Vector3(leftScreen.x + widthOfSpacer/2, -2, 0 );
 		for (int tier = 0; tier< tierCount; tier++) 
 		{
 			float tilesAcrossInThisTier = cakeSizesInTiles[ tier ].x;
 			float widthOfPiece = tilesAcrossInThisTier * maxTileSize;
-//			float spaceForThisPiece = ((tilesAcrossInThisTier/2 + 1) * maxTileSize);
 			Vector3 startPositionOfPiece = startPositionOfTileSpace + new Vector3( widthOfSpacer, 0, 0);
-//			Debug.Log ( "start position of piece : " + startPositionOfPiece);
 			startPositionOfTileSpace = startPositionOfPiece + new Vector3( widthOfPiece, 0, 0 );
-//			Debug.Log ( "new far left : " + startPositionOfPiece);
 			cakeTierPositions.Add (startPositionOfPiece);
-//			Debug.Log (" tier " + tier + " : " + startPositionOfPiece );
 		}
 
 		return cakeTierPositions;
 	}
+
 
 	public float MaxTileSize( int tierCount, int tilesToFitAcross, int tileToFitDown )
 	{
@@ -188,107 +258,123 @@ public class GameModel : MonoBehaviour
 		return scaleChange;
 	}
 
+
 	public float TileHeight( float scaleChange )
 	{
 		return (scaleChange * originalTileHeight);
 	}
 
-	public List<int> GetPossibleTileCountsByLevel()
+
+	public List<int> GetPossibleTileCounts()
 	{
-		List<int> possibleTileCounts = new List<int>();
-		if (currentLevel >= 0 ) 
+
+		List<int> tileCounts = new List<int>();
+		for (int i = 0; i < possibleTileCounts.Count; i++) 
+		{
+			tileCounts.Add ( possibleTileCounts[ i ]);
+		}
+		
+		return tileCounts;
+	}
+
+		public List<GameObject> GetAvailableTilesByLevel()
+		{
+			List<GameObject> possibleTiles = new List<GameObject>();
+			
+			for (int i = 0; i < availableTiles.Count; i++) 
+			{
+				possibleTiles.Add ( availableTiles[ i ]);
+			}
+
+			return possibleTiles;
+		}
+	
+
+	public void UpdateLevelingStats()
+	{
+		possibleTileCounts = new List<int>();
+		availableTiles = new List<GameObject>();
+
+
+		possibleTileCounts.Add ( 2 );
+		possibleTileCounts.Add ( 3 );
+		numberOfTiers = 2;
+		minVolumeDifference = .5f;
+		availableTiles.Add (cubeTile);
+		maxLayerInTier = 1;
+
+		if (currentLevel >= 1 ) 
+		{
+			availableTiles.Add (isoTile);
+
+		}
+		if (currentLevel >= 2 ) 
+		{
+			maxLayerInTier = 2;
+
+		}
+		if (currentLevel >= 3 ) {
+
+
+		} 
+
+		if (currentLevel >= 4 ) 
+		{
+			availableTiles.Add (roundTile);
+			maxRoundTilesPerTier = 1;
+			//limit to 1 round tile per layer
+		}
+		if ( currentLevel >= 5 )
+		{
+			minVolumeDifference = .215f;
+		}
+		if (currentLevel >= 8 ) 
 		{
 			possibleTileCounts.Add ( 4 );
+
+
 		}
-		if( currentLevel >= 2 )
+		if( currentLevel >= 10 )
 		{
-			possibleTileCounts.Add ( 3 );
+			maxRoundTilesPerTier = 2;
+
 		}
-		if( currentLevel >= 4 )
+
+		if (currentLevel >= 12 ) 
+		{
+			numberOfTiers = 3;
+		}
+		if (currentLevel >= 13) 
+		{
+			maxLayerInTier = 3;
+		}
+		if (currentLevel >= 14 ) 
 		{
 			possibleTileCounts.Add ( 5 );
 		}
 
-		return possibleTileCounts;
-	}
-
-	public int GetLayerCount( int tileCount )  // based on tile count and level, make this more random later
-	{
-		switch (tileCount) 
+		if (currentLevel >= 15 ) 
 		{
-		case 3:
-			if( currentLevel < 4 )
-			{
-				return 2;
-			}
-			else
-			{
-				return 3;
-			}
-		case 4:
-			if( currentLevel < 4 )
-			{
-				return 1;
-			}
-			else
-			{
-				return 2;
-			}
-		case 5:
-			return 1;
-		default :
-			Debug.Log ("not valid tile count");
-			return 1;
-				}
+			numberOfTiers = 4;
+		}
+		if (currentLevel >= 18 ) 
+		{
+			minVolumeDifference = .2f;
+		}
+		if( currentLevel >= 20 )
+		{
+
+		}
+		if( currentLevel >= 22 )
+		{
+			numberOfTiers = 5;
+		}
+		
 	}
 	
 
-	public List<GameObject> GetAvailableTilesByLevel()
-	{
-		List<GameObject> availableTiles = new List<GameObject>();
-		
-		availableTiles.Add (cubeTile);
-		availableTiles.Add (isoTile);
-
-		if (currentLevel >= 1) 
-		{
-			availableTiles.Add (roundTile);
-		}
-
-//		if(currentLevel >= 4 )
-//		{
-//			availableTiles.Add (isosceles);
-//		}
-//
-//		if (currentLevel >= 6)
-//		{
-//			availableTiles.Add (twoTriangles);
-//		}
-		
-		return availableTiles;
-		
-	}
-
-	public int NumberOfTiersByLevel()
-	{
-		int numberOfTiers = 2;
-
-		if ( currentLevel > 0 ) 
-		{
-			numberOfTiers ++;
-		}
-		if (currentLevel > 2) 
-		{
-			numberOfTiers ++;
-		}
-		if (currentLevel > 4) 
-		{
-			numberOfTiers ++;
-		}
-//		Debug.Log (numberOfTiers);
-		return numberOfTiers;
-	}
 	
+
 
 	void ChangeLevel()
 	{
@@ -302,6 +388,9 @@ public class GameModel : MonoBehaviour
 			currentLevel = Mathf.Max (0, currentLevel - 1);
 			Debug.Log ("CURRENT LEVEL: " + currentLevel);
 		}
+
+		levelDisplay.text = "Level " + ( currentLevel + 1 );
+		UpdateLevelingStats ();
 	}
 
 	public void UpdateStatsAndLevel( bool correctAnswer )
@@ -311,31 +400,51 @@ public class GameModel : MonoBehaviour
 			score += scoreIncrease;
 			scoreDisplay.text = "Score : " + score;
 
-			if( selectionManager.currentCakeTiers.Count <= 1 )
+			//if entire problem is completed
+			if( selectionManager.currentCakeTiers.Count == 0 )
 			{
 				correctAnswersInARow ++;
+				if (correctAnswersInARow == correctInARowForLevelUp) 
+				{
+					UpdateLevel( 1 );
+				}
 			}
 		} 
-
 		else 
 		{
-			correctAnswersInARow = 0;
-//			currentLevel = Mathf.Max(minLevel, currentLevel - 1 );
-			Debug.Log ("leveled down");
+			UpdateLevel( -1 );
 		}
-
-		UpdateLevel ();
 	}
+	
 
-	void UpdateLevel()
+	void UpdateLevel( int levelChange )
 	{
-		if (correctAnswersInARow == correctInARowForLevelUp) 
+		switch (levelChange) 
 		{
+		case 1:
+			//increase 1 level, not over max level
 			currentLevel = Mathf.Min ( maxLevel, currentLevel + 1);
-			correctAnswersInARow = 0;
-			Debug.Log ("leveled up");
+			Debug.Log ("LEVELED UP ");
+			break;
+		case -1:
+			currentLevel = Mathf.Max ( minLevel, currentLevel - 1);
+			Debug.Log ("LEVELED DOWN ");
+			break;
+		default:
+			//no level change
+			break;
 		}
+		correctAnswersInARow = 0;
+		UpdateLevelingStats();
+		levelDisplay.text = "Level " + ( currentLevel + 1 );
 
 	}
+
+	public void RestartGame()
+	{
+		Application.LoadLevel ("Cake");
+	}
+
+
 
 }
