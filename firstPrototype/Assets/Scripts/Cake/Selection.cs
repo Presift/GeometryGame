@@ -86,7 +86,7 @@ public class Selection : MonoBehaviour {
 		float tileSize = gameManager.MaxTileSize( numberOfTiers, totalTilesAcross, totalTilesDown );
 		float scaleChange = gameManager.ScaleChange( tileSize );
 		float tileHeight = gameManager.TileHeight( scaleChange );
-		cakePlate.singleTierHeight = tileHeight * (1 + gameManager.frostingHeightMultiplier );
+		cakePlate.singleTierHeight = tileHeight * (1 + ( gameManager.frostingHeightMultiplier ) );
 
 		List<Vector3> tierStartPositions = gameManager.CakeTierStartPositions (tileSize, layerSizes, totalTilesAcross);
 
@@ -112,7 +112,10 @@ public class Selection : MonoBehaviour {
 			CakeTier tierScript = (CakeTier)newCakeTier.GetComponent(typeof(CakeTier));
 			tierScript.manager = gameManager;
 			tierScript.selectionManager = this;
-			tierScript.NewCakeTier( pieceCoordinates, tileSize, tileHeight, scaleChange, gameManager.cubeTile, startPosition, tierScript, availableTiles, volumeOrder, cakeColor, gameManager.frostingHeightMultiplier, minVolDiff, maxRoundTilesPerTier );
+			tierScript.NewCakeTier( pieceCoordinates, tileSize, tileHeight, scaleChange, 
+			                       gameManager.cubeTile, startPosition, tierScript, availableTiles, 
+			                       volumeOrder, cakeColor, gameManager.frostingHeightMultiplier, 
+			                       minVolDiff, maxRoundTilesPerTier );
 
 
 			currentCakeTiers.Add ( tierScript );

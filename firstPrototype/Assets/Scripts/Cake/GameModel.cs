@@ -40,7 +40,7 @@ public class GameModel : MonoBehaviour
 
 	private float originalTileSize;
 	private float horizontalWorldDistance;
-	private float originalTileHeight;
+	public float originalTileHeight;
 
 	public float scaleChange;
 
@@ -54,7 +54,7 @@ public class GameModel : MonoBehaviour
 
 	public Selection selectionManager;
 
-	public float frostingHeightMultiplier = .25f;  // multiplied by single cake tier height to get frosting height
+	public float frostingHeightMultiplier = .5f;  // multiplied by single cake tier height to get frosting height
 	public Material chocolate;
 	public Material vanilla;
 

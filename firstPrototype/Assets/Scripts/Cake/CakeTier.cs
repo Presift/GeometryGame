@@ -44,7 +44,10 @@ public class CakeTier : MonoBehaviour {
 		}
 	}
 
-	public float NewCakeTier ( int[,] pieceCoordinates, float newTileSize, float newTileHeight, float scaleChange, GameObject defaultTile, Vector3 position, CakeTier tierScript, List<GameObject> availableTiles, List<float> cakeVolumes, Material cakeColor, float frostingHeightMultiplier, float minVolumeDiff, int maxRoundTiles )
+	public float NewCakeTier ( int[,] pieceCoordinates, float newTileSize, float newTileHeight, float scaleChange, 
+	                          GameObject defaultTile, Vector3 position, CakeTier tierScript, List<GameObject> availableTiles, 
+	                          List<float> cakeVolumes, Material cakeColor, float frostingHeightMultiplier, float minVolumeDiff, 
+	                          int maxRoundTiles )
 	{
 		centerPosition = position;
 		this.transform.position = centerPosition;
@@ -55,10 +58,13 @@ public class CakeTier : MonoBehaviour {
 
 		//add it as child of cake tier
 		newCakeLayerObject.transform.parent = this.transform;
-		
+
+		float frostingHeight = newTileHeight * frostingHeightMultiplier;
 		//create cake tile pieces on layer
 		CakeLayer layerScript = ( CakeLayer )newCakeLayerObject.GetComponent( typeof( CakeLayer ));
-		float area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, position, availableTiles, tierScript, cakeColor, maxRoundTiles );
+		float area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, 
+		                                            position, availableTiles, tierScript, cakeColor, 
+		                                            maxRoundTiles, manager.originalTileHeight, frostingHeightMultiplier);
 
 		int redoAttempts = 0;
 
@@ -68,43 +74,34 @@ public class CakeTier : MonoBehaviour {
 			//wipe previous layer
 			layerScript.WipeCurrentLayer();
 			//set up a new layer
-			area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, position, availableTiles, tierScript, cakeColor, maxRoundTiles );
+			area = layerScript.SetUpPieceAndStats( pieceCoordinates, newTileSize, scaleChange, defaultTile, 
+			                                      position, availableTiles, tierScript, cakeColor, 
+			                                      maxRoundTiles, manager.originalTileHeight, frostingHeight );
 			redoAttempts ++;
 		}
 
-		float frostingHeight = newTileHeight * frostingHeightMultiplier;
 
-		//add a layer of frosting
-		position += new Vector3( 0, 0, ( newTileHeight + frostingHeight ) / 2  );
-		GameObject frostingLayer = ( GameObject )Instantiate( newCakeLayerObject, position, Quaternion.identity );
-		//parent frosting to cake layer
-		frostingLayer.transform.parent = layerScript.transform;
-		//change color to frosting color
-		CakeLayer frostingScript = ( CakeLayer )frostingLayer.GetComponent( typeof( CakeLayer ));
-		frostingScript.ChangeChildrenColor ();
-		frostingLayer.transform.localScale = new Vector3( frostingLayer.transform.localScale.x, frostingLayer.transform.localScale.y, frostingLayer.transform.localScale.z / 4 );
-		frostingLayer.name = "Frosting";
-
+		tierHeight = newTileHeight + frostingHeight;
 		cakeLayer = newCakeLayerObject;
-		startPositionForNextCakeTier = position;
+//		startPositionForNextCakeTier = position + new Vector3( 0, 0, (tierHeight ) / 2  );
+		startPositionForNextCakeTier = position + new Vector3( 0, 0, tierHeight  );
+//		startPositionForNextCakeTier = position + new Vector3( 0, 0, ( newTileHeight + frostingHeight ) / 2  );
 
 		volume = area;
 
-		tierHeight = newTileHeight + frostingHeight;
+
 
 		return area;
 	}
 
 	public void MakeAdditionalLayers( int additionalLayers )
 	{
-		//for each additional layer over 1
+		//for each additional layer
 		for (int layer = 0; layer < additionalLayers; layer++) 
 		{
-			//add a cake layer
-			startPositionForNextCakeTier += new Vector3(0, 0, ( tierHeight ) / 2 );
 			//duplicate cakeObject
 			GameObject additionalLayer = ( GameObject )Instantiate( cakeLayer, startPositionForNextCakeTier, Quaternion.identity );
-			startPositionForNextCakeTier += new Vector3(0, 0, ( tierHeight ) / 2 );
+			startPositionForNextCakeTier += new Vector3(0, 0, tierHeight );
 			additionalLayer.transform.parent = this.transform;
 				
 		}

@@ -19,7 +19,12 @@ public class CakeLayer : MonoBehaviour {
 	int roundTilesUsed = 0;
 
 	public Color frostingColor;
+
+	float frostingHeight;
+	float frostingHeightMultiplier;
 	public Material cakeColor;
+
+	private float originalTileHeight;
 
 	// Use this for initialization
 	void Awake () {
@@ -31,9 +36,14 @@ public class CakeLayer : MonoBehaviour {
 
 	}
 
-	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript, Material cakeMaterial, int maxRoundTiles )
+	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, 
+	                                Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript, Material cakeMaterial, 
+	                                int maxRoundTiles, float tileHeight, float frostingMultiplier)
 
 	{
+		originalTileHeight = tileHeight;
+		frostingHeightMultiplier = frostingMultiplier;
+		frostingHeight = originalTileHeight * frostingMultiplier;
 		cakeColor = cakeMaterial;
 		scaleChange = newScaleChange;
 		tileSize = newTileSize;
@@ -90,8 +100,9 @@ public class CakeLayer : MonoBehaviour {
 			GameObject newTile = makeNewFittedTile( refreshedTiles, sideExposures, column, row, centerPosition );
 			//instantiate tile at scaled size at coordinate
 
-			newTile.transform.localScale *= scaleChange;
 
+			newTile.transform.localScale *= scaleChange;
+			Transform child = newTile.transform.GetChild( 0 );
 			//set side Exposure bools on this tile
 			CakeTile tileScript = (CakeTile)newTile.GetComponent(typeof(CakeTile));
 			tileScript.SetGrandparentScript( tierScript );
@@ -100,6 +111,22 @@ public class CakeLayer : MonoBehaviour {
 			//attach tile to parent piece
 			newTile.transform.parent = this.gameObject.transform;
 		}
+	}
+
+	void CreateFrosting( GameObject tile, Vector3 startPosition )  //add a layer of frosting to tile
+	{
+		startPosition += new Vector3( 0, 0, ( originalTileHeight + frostingHeight ) / 2  );
+		GameObject frostingLayer = ( GameObject )Instantiate( tile, startPosition, Quaternion.identity );
+
+		//parent frosting to cake layer
+		frostingLayer.transform.parent = tile.transform;
+		//set rotation to its parent ( rather than Quaternion. identity )
+		frostingLayer.transform.localEulerAngles = Vector3.zero;
+		frostingLayer.transform.localScale = new Vector3( frostingLayer.transform.localScale.x, frostingLayer.transform.localScale.y, frostingLayer.transform.localScale.z * frostingHeightMultiplier );
+		//change color to frosting color
+		frostingLayer.renderer.material.color = frostingColor;
+		frostingLayer.name = "Frosting";
+
 	}
 	
 
@@ -175,13 +202,17 @@ public class CakeLayer : MonoBehaviour {
 		UpdateTileTypesUsed( newTile );
 		
 		//instantiate new tile at rotation
-		fittedTile = (GameObject)Instantiate( newTile, new Vector3( column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z ), Quaternion.identity);
+		Vector3 startPosition = new Vector3 (column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z);
+		fittedTile = (GameObject)Instantiate( newTile, startPosition, Quaternion.identity);
 		CakeTile fittedTileScript = ( CakeTile ) fittedTile.GetComponent(typeof(CakeTile));
+//		Debug.Log (" size 1: " + fittedTile.transform.rotation);
 		fittedTileScript.SetNewPerimetersAfterRotation( rotation );
 		fittedTile.renderer.material = cakeColor;
 
-		//if fitted tile is round
-//		Debug.Log (" fitted tile name : " + fittedTileScript.name);
+		CreateFrosting (fittedTile, startPosition );
+//		Debug.Log (" post rotation : " + fittedTile.transform.rotation);
+//		CreateFrosting (newTile, startPosition );
+
 		if (fittedTileScript.name.Contains( "round" )) 
 		{
 			roundTilesUsed ++;
@@ -282,16 +313,16 @@ public class CakeLayer : MonoBehaviour {
 		return sideExposures;
 	}
 
-	public void ChangeChildrenColor()
-	{
-		Transform parent = gameObject.transform;
-
-		foreach (Transform child in parent) 
-		{
-			//set child color
-			child.renderer.material.color = frostingColor;
-		}
-	}
+//	public void ChangeChildrenColor()
+//	{
+//		Transform parent = gameObject.transform;
+//
+//		foreach (Transform child in parent) 
+//		{
+//			//set child color
+//			child.renderer.material.color = frostingColor;
+//		}
+//	}
 
 }
 
