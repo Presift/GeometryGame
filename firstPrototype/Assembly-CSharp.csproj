@@ -54,6 +54,8 @@
      <Compile Include="Assets\Scripts\Cake\CakePlate.cs" />
      <Compile Include="Assets\Scripts\Cake\CakeTier.cs" />
      <Compile Include="Assets\Scripts\Cake\CakeTile.cs" />
+     <Compile Include="Assets\Scripts\Cake\FadeOut.cs" />
+     <Compile Include="Assets\Scripts\Cake\Feedback.cs" />
      <Compile Include="Assets\Scripts\Cake\GameModel.cs" />
      <Compile Include="Assets\Scripts\Cake\Selection.cs" />
  <Reference Include="UnityEngine.UI">

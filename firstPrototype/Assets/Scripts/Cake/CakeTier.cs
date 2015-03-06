@@ -19,6 +19,10 @@ public class CakeTier : MonoBehaviour {
 	GameObject cakeLayer;
 	GameObject frostingLayer;
 
+	public List<GameObject> squareTiles;  //in order from bottom layer to topmost
+	public List<GameObject> isoTiles;
+	public List<GameObject> roundTiles;
+
 	public int tilesAcross;
 	public int tilesDown;
 
@@ -80,16 +84,17 @@ public class CakeTier : MonoBehaviour {
 			redoAttempts ++;
 		}
 
+		squareTiles = layerScript.squareTiles;
+		roundTiles = layerScript.roundTiles;
+		isoTiles = layerScript.isoTiles;
 
 		tierHeight = newTileHeight + frostingHeight;
 		cakeLayer = newCakeLayerObject;
-//		startPositionForNextCakeTier = position + new Vector3( 0, 0, (tierHeight ) / 2  );
-		startPositionForNextCakeTier = position + new Vector3( 0, 0, tierHeight  );
-//		startPositionForNextCakeTier = position + new Vector3( 0, 0, ( newTileHeight + frostingHeight ) / 2  );
+		Debug.Log (" first layer : " + startPositionForNextCakeTier);
+		startPositionForNextCakeTier = position - new Vector3( 0, 0, tierHeight  );
+		Debug.Log(" second layer layer : " + startPositionForNextCakeTier );
 
 		volume = area;
-
-
 
 		return area;
 	}
@@ -100,9 +105,27 @@ public class CakeTier : MonoBehaviour {
 		for (int layer = 0; layer < additionalLayers; layer++) 
 		{
 			//duplicate cakeObject
-			GameObject additionalLayer = ( GameObject )Instantiate( cakeLayer, startPositionForNextCakeTier, Quaternion.identity );
+			GameObject additionalLayer = ( GameObject )Instantiate( cakeLayer, startPositionForNextCakeTier, cakeLayer.transform.rotation );
 			startPositionForNextCakeTier += new Vector3(0, 0, tierHeight );
 			additionalLayer.transform.parent = this.transform;
+
+			CakeLayer cakeLayerScript = ( CakeLayer )additionalLayer.GetComponent( typeof( CakeLayer ));
+
+			//add square tiles from layer to list of all square tiles in tier
+			for( int square = 0; square < cakeLayerScript.squareTiles.Count; square ++ )
+			{
+				squareTiles.Add ( cakeLayerScript.squareTiles[ square ] );
+			}
+
+			for( int round = 0; round < cakeLayerScript.roundTiles.Count; round ++ )
+			{
+				roundTiles.Add ( cakeLayerScript.roundTiles[ round ] );
+			}
+
+			for( int iso = 0; iso < cakeLayerScript.isoTiles.Count; iso ++ )
+			{
+				isoTiles.Add ( cakeLayerScript.isoTiles[ iso ] );
+			}
 				
 		}
 

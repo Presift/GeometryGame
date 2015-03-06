@@ -14,13 +14,11 @@ public class CakeTile : MonoBehaviour {
 
 	public float area;
 
-//	public bool inputLocked;
 
 	private CakeTier tierScript; //grandparent component
 
 	// Use this for initialization
 	void Awake () {
-
 	}
 	
 	// Update is called once per frame
@@ -30,13 +28,15 @@ public class CakeTile : MonoBehaviour {
 
 	void OnMouseDown()
 	{
+//		Debug.Log (gameObject.name);
 		if (!tierScript.inputLocked) 
 		{
 			tierScript.Selected ();	
 		}
 
 	}
-	
+
+
 
 	public List<float> GetNewPerimetersAfterRotation( int rotation)
 	{

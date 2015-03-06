@@ -10,20 +10,10 @@ public class Selection : MonoBehaviour {
 
 	public GameModel gameManager;
 	public CakePlate cakePlate;
+	public Feedback feedback;
 
 	public Text comparisonLabel;
-
-	public GameObject correctAnswerImage;
-	public GameObject incorrectAnswerImage;
-	public GameObject arrow;
-
-	bool showFeedback = false;
-
-	public float timeToShowFeedback;
-
-
-	float timeShowingFeeback;
-
+	
 	CakeLayer largerArea;
 	CakeLayer largerPerimeter;
 
@@ -39,9 +29,11 @@ public class Selection : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (showFeedback)
+
+
+		if (Input.GetKeyDown (KeyCode.Space)) 
 		{
-			FeedbackTimer();
+			feedback.TakeAwaySimilarities( currentCakeTiers );
 		}
 
 	}
@@ -99,7 +91,7 @@ public class Selection : MonoBehaviour {
 
 			//get position for new tier
 			Vector3 startPosition = tierStartPositions[ newTier ];
-
+			Debug.Log ("start Position : " + startPosition);
 			Material cakeColor = gameManager.CakeColor( newTier );
 			//create new cake tier
 			GameObject newCakeTier = (GameObject)Instantiate( cakeTier, new Vector3( 0, 0, 0), Quaternion.identity);
@@ -187,7 +179,15 @@ public class Selection : MonoBehaviour {
 				int additionalLayer = bestLayerConfigs[ tier ];
 				currentCakeTiers[ tier ].MakeAdditionalLayers( additionalLayer );
 				currentCakeTiers[ tier ].volume *= ( additionalLayer + 1 );
+
 			}
+		}
+
+		for ( int tier = 0; tier < numberOfTiers; tier++ )
+		{
+
+			currentCakeTiers[ tier ].transform.localEulerAngles = new Vector3( 320, 180, 0 );
+			
 		}
 
 
@@ -272,7 +272,8 @@ public class Selection : MonoBehaviour {
 	public bool IsSelectionCorrect( CakeTier selection )
 	{
 		Vector3 feedbackPosition;
-		GameObject feedbackImage;
+//		GameObject feedbackImage;
+		bool correctAnswer;
 
 		feedbackPosition = new Vector3( selection.centerPosition.x, selection.centerPosition.y, -1 );
 	
@@ -284,70 +285,26 @@ public class Selection : MonoBehaviour {
 			selection.MoveToCakePlate( cakePlate );
 			volumeOrder.RemoveAt( 0 );
 			currentCakeTiers.Remove( selection );
-			feedbackImage = correctAnswerImage;
-			gameManager.UpdateStatsAndLevel( true );
-			ShowFeedback ( feedbackImage, feedbackPosition, 0 );
+			correctAnswer = true;
+			gameManager.UpdateStatsAndLevel( correctAnswer );
+			feedback.ShowFeedback ( correctAnswer, feedbackPosition, 0 );
 			return true;
 		}
 		else
 		{
 			LockInput ( true );
-			feedbackImage = incorrectAnswerImage;
+			correctAnswer = false;
 			//show correct answer
-			gameManager.UpdateStatsAndLevel( false );
-			ShowFeedback ( feedbackImage, feedbackPosition, -1 );
-			ShowCorrectAnswer();
+			gameManager.UpdateStatsAndLevel( correctAnswer );
+			feedback.ShowFeedback ( correctAnswer, feedbackPosition, 0 );
+//			feedback.ShowCorrectAnswer();
 			return false;
 		}
 	}
 
-	void ShowCorrectAnswer()
-	{
-		//get correct cake
-		CakeTier correctSelection = null;
-		Vector3 feedbackPosition;
-
-		for(  int cakeTier = 0; cakeTier < currentCakeTiers.Count; cakeTier ++ )
-		{
-			if( currentCakeTiers[ cakeTier ].volume == volumeOrder[ 0 ] )
-			{
-				correctSelection = currentCakeTiers [ cakeTier ];
-			}
-		}
 
 
-		feedbackPosition = new Vector3( correctSelection.centerPosition.x, correctSelection.centerPosition.y - (correctSelection.tierHeight / 2 ), -1 );
-		ShowFeedback ( arrow, feedbackPosition, -1 );
-	}
-
-	void ShowFeedback( GameObject feedbackImage, Vector3 position, float startTime )
-	{
-		feedbackImage.transform.position = position;
-		feedbackImage.SetActive (true);
-		//start countdown
-		showFeedback = true;
-		timeShowingFeeback = startTime;
-	}
-
-	void FeedbackTimer()
-	{
-		if (timeShowingFeeback < timeToShowFeedback) 
-		{
-			timeShowingFeeback += Time.deltaTime;
-		}
-		else
-		{
-			bool correctAnswer = !arrow.activeInHierarchy;
-
-			WipeFeedback();
-			showFeedback = false;
-
-			NextStep( correctAnswer );
-
-		}
-	}
-
-	void NextStep( bool correctAnswer )
+	public void NextStep( bool correctAnswer )
 	{
 		if( !correctAnswer )
 		{
@@ -363,12 +320,7 @@ public class Selection : MonoBehaviour {
 		return;
 	}
 	
-	public void WipeFeedback()
-	{
-		correctAnswerImage.SetActive ( false );
-		incorrectAnswerImage.SetActive ( false );
-		arrow.SetActive (false);
-	}
+
 
 	void LockInput( bool locked )
 	{

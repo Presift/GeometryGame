@@ -16,7 +16,9 @@ public class CakeLayer : MonoBehaviour {
 
 	public Selection selectionManager;
 
-	int roundTilesUsed = 0;
+	public List<GameObject> squareTiles;
+	public List<GameObject> isoTiles;
+	public List<GameObject> roundTiles;
 
 	public Color frostingColor;
 
@@ -29,6 +31,21 @@ public class CakeLayer : MonoBehaviour {
 	// Use this for initialization
 	void Awake () {
 
+		roundTiles = new List<GameObject> ();
+		isoTiles = new List<GameObject> ();
+		squareTiles = new List<GameObject> ();
+
+		Transform parent = gameObject.transform;
+
+		//if object already has children
+		if (transform.childCount > 0) 
+		{
+			foreach (Transform child in parent) 
+			{
+				UpdateTileTypeLists( child.gameObject );
+			}
+		}
+
 	}
 	
 	// Update is called once per frame
@@ -36,11 +53,40 @@ public class CakeLayer : MonoBehaviour {
 
 	}
 
+	public void UpdateTileTypeLists( GameObject tile )
+	{
+		if (tile.name.Contains( "round" )) 
+		{
+			roundTiles.Add ( tile );
+		}
+		else if( tile.name.Contains( "cube"))
+		{
+
+			//get iso child and add to iso list
+			Transform parent = tile.transform;
+			
+			foreach (Transform child in parent) 
+			{
+					isoTiles.Add (child.gameObject);
+				
+			}
+
+		}
+		else if( tile.name.Contains("iso"))
+		{
+			isoTiles.Add ( tile );
+		}
+	}
+
 	public float SetUpPieceAndStats( int[,] pieceCoordinates, float newTileSize, float newScaleChange, GameObject newDefaultTile, 
 	                                Vector3 centerPosition, List<GameObject> availableTiles, CakeTier tierScript, Material cakeMaterial, 
 	                                int maxRoundTiles, float tileHeight, float frostingMultiplier)
 
 	{
+		squareTiles = new List<GameObject> ();
+		roundTiles = new List<GameObject> ();
+		isoTiles = new List<GameObject> ();
+
 		originalTileHeight = tileHeight;
 		frostingHeightMultiplier = frostingMultiplier;
 		frostingHeight = originalTileHeight * frostingMultiplier;
@@ -65,7 +111,9 @@ public class CakeLayer : MonoBehaviour {
 		}
 		
 		gameObject.transform.DetachChildren ();
-		roundTilesUsed = 0;
+		roundTiles = new List<GameObject> ();
+		isoTiles = new List<GameObject> ();
+		squareTiles = new List<GameObject> ();
 	}
 
 
@@ -78,7 +126,7 @@ public class CakeLayer : MonoBehaviour {
 			List < GameObject > refreshedTiles = new List < GameObject > ( availableTiles );
 
 			//if max round tiles used
-			if( roundTilesUsed >= maxRoundTiles )
+			if( roundTiles.Count >= maxRoundTiles )
 			{
 				for( int tileIndex = 0; tileIndex < availableTiles.Count; tileIndex++ )
 				{
@@ -100,9 +148,9 @@ public class CakeLayer : MonoBehaviour {
 			GameObject newTile = makeNewFittedTile( refreshedTiles, sideExposures, column, row, centerPosition );
 			//instantiate tile at scaled size at coordinate
 
+			UpdateTileTypeLists (newTile);
 
 			newTile.transform.localScale *= scaleChange;
-			Transform child = newTile.transform.GetChild( 0 );
 			//set side Exposure bools on this tile
 			CakeTile tileScript = (CakeTile)newTile.GetComponent(typeof(CakeTile));
 			tileScript.SetGrandparentScript( tierScript );
@@ -115,17 +163,53 @@ public class CakeLayer : MonoBehaviour {
 
 	void CreateFrosting( GameObject tile, Vector3 startPosition )  //add a layer of frosting to tile
 	{
-		startPosition += new Vector3( 0, 0, ( originalTileHeight + frostingHeight ) / 2  );
-		GameObject frostingLayer = ( GameObject )Instantiate( tile, startPosition, Quaternion.identity );
+		Vector3 frostingPosition;
 
-		//parent frosting to cake layer
-		frostingLayer.transform.parent = tile.transform;
-		//set rotation to its parent ( rather than Quaternion. identity )
-		frostingLayer.transform.localEulerAngles = Vector3.zero;
-		frostingLayer.transform.localScale = new Vector3( frostingLayer.transform.localScale.x, frostingLayer.transform.localScale.y, frostingLayer.transform.localScale.z * frostingHeightMultiplier );
-		//change color to frosting color
-		frostingLayer.renderer.material.color = frostingColor;
-		frostingLayer.name = "Frosting";
+		if (tile.name.Contains ("cube")) 
+		{
+			//for first two children of tile
+			for( int childIndex = 0; childIndex < 2; childIndex ++ )
+			{
+				//create frosting layer of child
+				GameObject child = tile.transform.GetChild( childIndex ).gameObject;
+
+				frostingPosition = startPosition + new Vector3( 0, 0, ( originalTileHeight + frostingHeight ) / 2  );
+				GameObject frostingLayer = ( GameObject )Instantiate( child, frostingPosition, child.transform.rotation );
+
+				//parent frosting to cake layer
+				frostingLayer.transform.parent = child.transform;
+
+				frostingLayer.transform.localScale = new Vector3( frostingLayer.transform.localScale.x, frostingLayer.transform.localScale.y, frostingLayer.transform.localScale.z * frostingHeightMultiplier );
+				//change color to frosting color
+				frostingLayer.renderer.material.color = frostingColor;
+				frostingLayer.name = "Frosting";
+				
+				//remove script and collider
+//				CakeTile tileScript = (CakeTile)frostingLayer.GetComponent(typeof(CakeTile));
+//				BoxCollider collider = (BoxCollider) frostingLayer.GetComponent(typeof( BoxCollider ));
+//				Destroy( collider );
+//				Destroy(tileScript);
+			}
+				
+		}
+		else
+		{
+			frostingPosition = startPosition + new Vector3( 0, 0, ( originalTileHeight + frostingHeight ) / 2  );
+			GameObject frostingLayer = ( GameObject )Instantiate( tile, frostingPosition, tile.transform.rotation );
+			
+			//parent frosting to cake layer
+			frostingLayer.transform.parent = tile.transform;
+			frostingLayer.transform.localScale = new Vector3( frostingLayer.transform.localScale.x, frostingLayer.transform.localScale.y, frostingLayer.transform.localScale.z * frostingHeightMultiplier );
+			//change color to frosting color
+			frostingLayer.renderer.material.color = frostingColor;
+			frostingLayer.name = "Frosting";
+			
+			//remove script and collider
+			CakeTile tileScript = (CakeTile)frostingLayer.GetComponent(typeof(CakeTile));
+			BoxCollider collider = (BoxCollider) frostingLayer.GetComponent(typeof( BoxCollider ));
+			Destroy( collider );
+			Destroy(tileScript);
+		}
 
 	}
 	
@@ -160,7 +244,6 @@ public class CakeLayer : MonoBehaviour {
 			}
 		}
 
-//		Debug.Log (tileScript.name + "won't fit here");
 		return -1;
 	}
 
@@ -192,38 +275,39 @@ public class CakeLayer : MonoBehaviour {
 
 		}
 
-		Debug.Log ("could not find tile from availableTiles to fit, had to use square tile");
 		return CreateNewTile( defaultTile, column, row, 0, fittedTile, centerPosition );
 	}
 
 	GameObject CreateNewTile( GameObject newTile, int column, int row, int rotation, GameObject fittedTile, Vector3 centerPosition )
 	{
-		//increase count of this tile type
-		UpdateTileTypesUsed( newTile );
-		
+
+
 		//instantiate new tile at rotation
 		Vector3 startPosition = new Vector3 (column * tileSize + centerPosition.x, row * tileSize + centerPosition.y, centerPosition.z);
 		fittedTile = (GameObject)Instantiate( newTile, startPosition, Quaternion.identity);
 		CakeTile fittedTileScript = ( CakeTile ) fittedTile.GetComponent(typeof(CakeTile));
-//		Debug.Log (" size 1: " + fittedTile.transform.rotation);
 		fittedTileScript.SetNewPerimetersAfterRotation( rotation );
-		fittedTile.renderer.material = cakeColor;
+
+		if (fittedTile.name.Contains ("cube")) 
+		{
+			
+			foreach (Transform child in fittedTile.transform ) 
+			{
+				child.gameObject.renderer.material = cakeColor;
+				
+			}
+		}
+		else
+		{
+			fittedTile.renderer.material = cakeColor;
+		}
+
 
 		CreateFrosting (fittedTile, startPosition );
-//		Debug.Log (" post rotation : " + fittedTile.transform.rotation);
-//		CreateFrosting (newTile, startPosition );
 
-		if (fittedTileScript.name.Contains( "round" )) 
-		{
-			roundTilesUsed ++;
-		}
 		return fittedTile;
 	}
 
-	public void UpdateTileTypesUsed( GameObject tile )
-	{
-		tilesUsed.Add (tile);
-	}
 
 
 	bool tileFitsInCoordinates ( List<float> sidePerimeters, List<bool> sideExposures ) //side exposures is a list of left, top, right, bottom sides of a tile

@@ -100,9 +100,11 @@ public class GameModel : MonoBehaviour
 		isoTile = (GameObject)Resources.Load("iso");
 		roundTile = (GameObject)Resources.Load("round");
 
-		MeshRenderer tileRenderer = (MeshRenderer)cubeTile.GetComponent (typeof(MeshRenderer));
+		MeshRenderer tileRenderer = (MeshRenderer)isoTile.GetComponent (typeof(MeshRenderer));
 		originalTileSize = tileRenderer.bounds.extents.x * 2;
+//		Debug.Log (originalTileSize);
 		originalTileHeight = tileRenderer.bounds.extents.z * 2;
+//		Debug.Log (originalTileHeight);
 
 		leftScreen = Camera.main.ScreenToWorldPoint (new Vector3( 0, 0, 0 ));
 		leftScreen = new Vector3 (leftScreen.x, 0, 0);
@@ -144,31 +146,12 @@ public class GameModel : MonoBehaviour
 	void Update () {
 		ChangeLevel ();
 
-		if (Input.GetKeyDown (KeyCode.Space)) 
-		{
-			selectionManager.ShowNewProblem();
-		}
-
 		if(levelIsTimed)
 		{
 			TimeLevel();
 		}
 	}
 
-//	public SetFontSize()
-//	{
-//		if (Screen.dpi > 100 && Screen.dpi < 200 || Screen.dpi==0){
-//			//iPad 1 & 2 : 132 ppi, macBookAir 11' : 135 ppi, ipadMini 1 : 163 ppi
-//			return;
-//		}else if (Screen.dpi >= 200 && Screen.dpi <275){
-//			//iPad 3 & 4 : 264 ppi;
-//			shogun.fontSize *= 3;
-//			return;
-//		}else{
-//			//iPad mini 2 : 326 ppi
-//			shogun.fontSize *= 3.6;
-//		}
-//	}
 
 	void TimeLevel()
 	{
