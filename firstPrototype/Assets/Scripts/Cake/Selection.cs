@@ -91,7 +91,7 @@ public class Selection : MonoBehaviour {
 
 			//get position for new tier
 			Vector3 startPosition = tierStartPositions[ newTier ];
-			Debug.Log ("start Position : " + startPosition);
+//			Debug.Log ("start Position : " + startPosition);
 			Material cakeColor = gameManager.CakeColor( newTier );
 			//create new cake tier
 			GameObject newCakeTier = (GameObject)Instantiate( cakeTier, new Vector3( 0, 0, 0), Quaternion.identity);

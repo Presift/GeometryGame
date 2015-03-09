@@ -210,16 +210,15 @@ public class GameModel : MonoBehaviour
 		int tierCount = cakeSizesInTiles.Count;
 		float widthOfSpacer = ( horizontalWorldDistance - (totalTilesAcross * maxTileSize)) / (tierCount + 1 );
 		List<Vector3> cakeTierPositions = new List<Vector3> ();
-		Vector3 startPositionOfTileSpace = new Vector3(leftScreen.x + widthOfSpacer/2, -2, 0 );
+		Vector3 startPositionOfTileSpace = new Vector3(leftScreen.x, -2, 0 );
+
 		for (int tier = 0; tier< tierCount; tier++) 
 		{
-			float tilesAcrossInThisTier = cakeSizesInTiles[ tier ].x;
-			float widthOfPiece = tilesAcrossInThisTier * maxTileSize;
-			Vector3 startPositionOfPiece = startPositionOfTileSpace + new Vector3( widthOfSpacer, 0, 0);
-			startPositionOfTileSpace = startPositionOfPiece + new Vector3( widthOfPiece, 0, 0 );
-			cakeTierPositions.Add (startPositionOfPiece);
+			float tilesFromLeft = cakeSizesInTiles[ tier ].x;
+			startPositionOfTileSpace += new Vector3( widthOfSpacer + ((tilesFromLeft - .5f) * maxTileSize), 0, 0);
+			cakeTierPositions.Add (startPositionOfTileSpace);
+			startPositionOfTileSpace += new Vector3( .5f * maxTileSize, 0, 0 );
 		}
-
 		return cakeTierPositions;
 	}
 
