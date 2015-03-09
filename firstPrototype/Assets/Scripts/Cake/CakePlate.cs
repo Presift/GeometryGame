@@ -6,7 +6,7 @@ public class CakePlate : MonoBehaviour {
 
 	public Vector3 cakePlatePosition = new Vector3( 0 , -6, 0 );
 	public Selection selectionManager;
-	public Vector3 previousTierCenterPositionOnPlate;
+	public Vector3 previousTierTopPosition;
 	public float previousTierHeight; 
 
 	public float rotationSpeed = 50;
@@ -17,7 +17,7 @@ public class CakePlate : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-//		Debug.Log (finalYRotation);
+
 	}
 	
 	// Update is called once per frame
@@ -32,7 +32,7 @@ public class CakePlate : MonoBehaviour {
 	public void WipeCakePlate()
 	{
 		previousTierHeight = 0;
-		previousTierCenterPositionOnPlate = cakePlatePosition;
+		previousTierTopPosition = cakePlatePosition;
 		DestroyCurrentChildren ();
 		ResetRotation ();
 	
@@ -55,12 +55,11 @@ public class CakePlate : MonoBehaviour {
 
 	public Vector3 TierPositionOnPlate( float tierHeight )
 	{
-		float centerOffset = (( tierHeight / singleTierHeight ) - 1) / 2 * singleTierHeight;
-		Vector3 newTierPosition = previousTierCenterPositionOnPlate + new Vector3 ( 0, ( previousTierHeight + singleTierHeight ) / 2, 0 );
-
-		previousTierHeight = tierHeight;
-		previousTierCenterPositionOnPlate = newTierPosition + new Vector3( 0, centerOffset, 0);
+		float centerOffset = tierHeight - ( singleTierHeight / 2 );
+		Vector3 newTierPosition = previousTierTopPosition + new Vector3 (0, centerOffset, 0);
+		previousTierTopPosition = newTierPosition + new Vector3 (0, singleTierHeight / 2, 0);
 		return newTierPosition;
+
 	}
 
 	public void RotatePlate()

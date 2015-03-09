@@ -207,6 +207,8 @@ public class CakeLayer : MonoBehaviour {
 			//remove script and collider
 			CakeTile tileScript = (CakeTile)frostingLayer.GetComponent(typeof(CakeTile));
 			BoxCollider collider = (BoxCollider) frostingLayer.GetComponent(typeof( BoxCollider ));
+			MeshCollider mesh = (MeshCollider)frostingLayer.GetComponent(typeof(MeshCollider));
+			Destroy (mesh);
 			Destroy( collider );
 			Destroy(tileScript);
 		}

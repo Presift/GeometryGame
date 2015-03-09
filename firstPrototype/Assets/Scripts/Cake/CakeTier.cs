@@ -90,14 +90,16 @@ public class CakeTier : MonoBehaviour {
 
 		tierHeight = newTileHeight + frostingHeight;
 		cakeLayer = newCakeLayerObject;
-//		Debug.Log (" first layer : " + startPositionForNextCakeTier);
 		startPositionForNextCakeTier = position - new Vector3( 0, 0, tierHeight  );
-//		Debug.Log(" second layer layer : " + startPositionForNextCakeTier );
 
 		volume = area;
 
+//		centerPosition = position;
+//		this.transform.position = centerPosition;
+
 		return area;
 	}
+	
 
 	public void MakeAdditionalLayers( int additionalLayers )
 	{
@@ -130,6 +132,7 @@ public class CakeTier : MonoBehaviour {
 		}
 
 		tierHeight *= (1 + additionalLayers);
+
 	}
 
 	bool VolumeApproxMatchesAnotherCakeColume( float thisCakeVolume, List<float> cakeVolumes, float minVolumeDifference )
