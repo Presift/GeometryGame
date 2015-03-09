@@ -90,9 +90,9 @@ public class CakeTier : MonoBehaviour {
 
 		tierHeight = newTileHeight + frostingHeight;
 		cakeLayer = newCakeLayerObject;
-		Debug.Log (" first layer : " + startPositionForNextCakeTier);
+//		Debug.Log (" first layer : " + startPositionForNextCakeTier);
 		startPositionForNextCakeTier = position - new Vector3( 0, 0, tierHeight  );
-		Debug.Log(" second layer layer : " + startPositionForNextCakeTier );
+//		Debug.Log(" second layer layer : " + startPositionForNextCakeTier );
 
 		volume = area;
 
