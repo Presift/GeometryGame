@@ -32,6 +32,8 @@ public class CakeTier : MonoBehaviour {
 	float journeyLength;
 	float startTime;
 
+	int layerCount = 1;
+
 	bool move = false;
 
 	// Use this for initialization
@@ -94,9 +96,6 @@ public class CakeTier : MonoBehaviour {
 
 		volume = area;
 
-//		centerPosition = position;
-//		this.transform.position = centerPosition;
-
 		return area;
 	}
 	
@@ -104,6 +103,7 @@ public class CakeTier : MonoBehaviour {
 	public void MakeAdditionalLayers( int additionalLayers )
 	{
 		//for each additional layer
+		layerCount += additionalLayers;
 		for (int layer = 0; layer < additionalLayers; layer++) 
 		{
 			//duplicate cakeObject

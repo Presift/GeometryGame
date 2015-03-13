@@ -11,6 +11,8 @@ public class GameModel : MonoBehaviour
 	public Text levelDisplay;
 	public Text finalScoreDisplay;
 
+//	public GameData data;
+
 	public GameObject endGameDisplay;
 
 	public int pointsForCorrect;
@@ -116,9 +118,11 @@ public class GameModel : MonoBehaviour
 
 	void Start()
 	{
+		GameData.dataControl.Load ();
+		currentLevel = GameData.dataControl.previousFinalLevel;
+		Debug.Log ("starting level : " + currentLevel);
 		scoreDisplay.text = "Score : " + score;
 		levelDisplay.text = "Level " + ( currentLevel + 1 );
-//		levelDisplay.fontSize
 
 		twoTilePieces.Add (line2Coordinates);
 
@@ -162,6 +166,8 @@ public class GameModel : MonoBehaviour
 		}
 		else
 		{
+			GameData.dataControl.previousFinalLevel = currentLevel;
+			GameData.dataControl.Save ();
 			//show "time up"
 			finalScoreDisplay.text += " " + score;
 			endGameDisplay.SetActive( true );
@@ -297,7 +303,7 @@ public class GameModel : MonoBehaviour
 		}
 		if (currentLevel >= 3 ) {
 
-
+			numberOfTiers = 3;
 		} 
 
 		if (currentLevel >= 4 ) 
@@ -314,18 +320,18 @@ public class GameModel : MonoBehaviour
 		{
 			possibleTileCounts.Add ( 4 );
 
+		}
+		if (currentLevel >= 9) 
+		{
 
 		}
+
 		if( currentLevel >= 10 )
 		{
 			maxRoundTilesPerTier = 2;
 
 		}
 
-		if (currentLevel >= 12 ) 
-		{
-			numberOfTiers = 3;
-		}
 		if (currentLevel >= 13) 
 		{
 			maxLayerInTier = 3;
@@ -345,7 +351,8 @@ public class GameModel : MonoBehaviour
 		}
 		if( currentLevel >= 20 )
 		{
-
+			maxRoundTilesPerTier = 3;
+			minVolumeDifference = .1f;
 		}
 		if( currentLevel >= 22 )
 		{
@@ -422,8 +429,17 @@ public class GameModel : MonoBehaviour
 
 	}
 
-	public void RestartGame()
+	public void ResetGame()
 	{
+		GameData.dataControl.previousFinalLevel = 0;
+		GameData.dataControl.Save ();
+		Application.LoadLevel ("Cake");
+	}
+
+	public void PlayAgain()
+	{
+//		GameData.dataControl.previousFinalLevel = currentLevel;
+//		GameData.dataControl.Save ();
 		Application.LoadLevel ("Cake");
 	}
 

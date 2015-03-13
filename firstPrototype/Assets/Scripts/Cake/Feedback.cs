@@ -36,7 +36,7 @@ public class Feedback : MonoBehaviour {
 
 		if( timeCorrectAnswer )
 		{
-			CorrectAnswerTimer( timeToShowCorrectAnswer );
+			ShowCorrectAnswerTimer( timeToShowCorrectAnswer );
 		}
 	}
 
@@ -65,7 +65,7 @@ public class Feedback : MonoBehaviour {
 		ShowFeedback ( false, feedbackPosition, -1 );
 	}
 
-	void CorrectAnswerTimer( float startTime )
+	void ShowCorrectAnswerTimer( float startTime )
 	{
 		if ( Time.time >= startTime ) 
 		{
@@ -165,16 +165,8 @@ public class Feedback : MonoBehaviour {
 		{
 			for (int script = 0; script < remainingTierScripts.Count; script ++)
 			{
-				//remove last two isos from iso tiles list (because these compose one square tile
-//				int isoTilesRemovalIndex = remainingTierScripts[ script ].isoTiles.Count - 1;
-//				remainingTierScripts[ script ].isoTiles.RemoveAt( isoTilesRemovalIndex );
-//				remainingTierScripts[ script ].isoTiles.RemoveAt( isoTilesRemovalIndex - 1 );
-
 				remainingTierScripts[ script ].isoTiles.RemoveAt( 0 );
 				remainingTierScripts[ script ].isoTiles.RemoveAt( 0 );
-
-//				int indexOfTopmostCube = remainingTierScripts[ script ].squareTiles.Count - ( cube + 1 );
-//				GameObject cubeToRemove = remainingTierScripts[ script ].squareTiles[ indexOfTopmostCube ];
 				GameObject cubeToRemove = remainingTierScripts[ script ].squareTiles[ 0 ];
 				remainingTierScripts[ script ].squareTiles.RemoveAt( 0 );
 				float startFadeOutTime = startTime + ( cube * takeAwayFrequency );
@@ -206,21 +198,15 @@ public class Feedback : MonoBehaviour {
 		{
 			for (int script = 0; script < remainingTierScripts.Count; script ++)
 			{
-//				int indexOfTopmostIso = remainingTierScripts[ script ].isoTiles.Count - ( iso + 1 );
 				GameObject isoToRemove = remainingTierScripts[ script ].isoTiles[ 0 ];
 				remainingTierScripts[ script ].isoTiles.RemoveAt( 0 );
 
-//				int indexOfTopmostIso = remainingTierScripts[ script ].isoTiles.Count - ( iso + 1 );
-//				GameObject isoToRemove = remainingTierScripts[ script ].isoTiles[ indexOfTopmostIso ];
-
-//				remainingTierScripts[ script ].isoTiles.RemoveAt( indexOfTopmostIso );
 				Debug.Log ( "iso index : " + iso + " , script : " + remainingTierScripts[ script ].name );
 				float startFadeOutTime = startTime + ( iso * takeAwayFrequency );
 				isoToRemove.SendMessage("StartFadeOut", startFadeOutTime );
 				
 			}
 		}
-//		Debug.Log ("fewest isos : " + fewestIsos);
 		return fewestIsos;
 	}
 
@@ -240,10 +226,6 @@ public class Feedback : MonoBehaviour {
 		{
 			for (int script = 0; script < remainingTierScripts.Count; script ++)
 			{
-//				int indexOfTopmostRound = remainingTierScripts[ script ].roundTiles.Count - ( iso + 1 );
-//				GameObject roundToRemove = remainingTierScripts[ script ].roundTiles[ indexOfTopmostRound ];
-
-//				int indexOfTopmostRound = remainingTierScripts[ script ].roundTiles.Count - ( iso + 1 );
 				GameObject roundToRemove = remainingTierScripts[ script ].roundTiles[ 0 ];
 				remainingTierScripts[ script ].roundTiles.RemoveAt( 0 );
 
@@ -253,7 +235,6 @@ public class Feedback : MonoBehaviour {
 				
 			}
 		}
-//		Debug.Log (" fewest rounds " + fewestRounds);
 		return fewestRounds;
 	}
 }

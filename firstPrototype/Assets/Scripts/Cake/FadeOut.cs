@@ -32,6 +32,6 @@ public class FadeOut : MonoBehaviour {
 	{
 		fadeOutTimeStart = time;
 		fading = true;
-		Debug.Log (" time : " + fadeOutTimeStart + ", object : " + gameObject.name);
+//		Debug.Log (" time : " + fadeOutTimeStart + ", object : " + gameObject.name);
 	}
 }

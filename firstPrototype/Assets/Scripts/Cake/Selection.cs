@@ -20,6 +20,8 @@ public class Selection : MonoBehaviour {
 	GameObject cakeLayer;
 	GameObject cakeTier;
 
+	public PerformanceStats stats;
+
 
 	// Use this for initialization
 	void Start () {
@@ -46,6 +48,12 @@ public class Selection : MonoBehaviour {
 		float minVolDiff = gameManager.minVolumeDifference;
 		int numberOfTiers = gameManager.numberOfTiers;
 		int maxRoundTilesPerTier = gameManager.maxRoundTilesPerTier;
+
+		//stats
+		stats.problemNum ++;
+		stats.possibleSelections = numberOfTiers;
+		stats.currentLevel = gameManager.currentLevel;
+
 
 		List <GameObject> availableTiles = gameManager.GetAvailableTilesByLevel ();
 
@@ -170,6 +178,10 @@ public class Selection : MonoBehaviour {
 
 		}
 
+		//stats
+		stats.avgVolumeDiff = bestVolumeDiff;
+		stats.DetermineMaxMinLayerCounts (bestLayerConfigs);
+
 		//set cake layers based on optimal differences
 
 		if( bestLayerConfigs.Count != 0 )
@@ -183,6 +195,16 @@ public class Selection : MonoBehaviour {
 			}
 		}
 
+
+//		for ( int tier = 0; tier < numberOfTiers; tier++ )
+//		{
+//			int additionalLayer = 3;
+//			currentCakeTiers[ tier ].MakeAdditionalLayers( additionalLayer );
+//			currentCakeTiers[ tier ].volume *= ( additionalLayer + 1 );
+//			
+//		}
+		
+
 		for ( int tier = 0; tier < numberOfTiers; tier++ )
 		{
 
@@ -195,6 +217,7 @@ public class Selection : MonoBehaviour {
 
 		//unlock answer input
 		LockInput (false);
+		stats.SetTimeSinceLastInput (Time.time);
 	
 	}
 
@@ -288,6 +311,13 @@ public class Selection : MonoBehaviour {
 			correctAnswer = true;
 			gameManager.UpdateStatsAndLevel( correctAnswer );
 			feedback.ShowFeedback ( correctAnswer, feedbackPosition, 0 );
+			stats.CalculateResonseTime( Time.time);
+			stats.SetTimeSinceLastInput( Time.time );
+			stats.correctAnswer = 1;
+			stats.volumeDiffFromCorrectAnswer = 0;
+			stats.CalculateDifferences( selection, selection );
+			stats.SaveStats();
+
 			return true;
 		}
 		else
@@ -297,7 +327,25 @@ public class Selection : MonoBehaviour {
 			//show correct answer
 			gameManager.UpdateStatsAndLevel( correctAnswer );
 			feedback.ShowFeedback ( correctAnswer, feedbackPosition, 0 );
-//			feedback.ShowCorrectAnswer();
+			stats.CalculateResonseTime( Time.time);
+			stats.SetTimeSinceLastInput( Time.time );
+			stats.correctAnswer = 0;
+			stats.volumeDiffFromCorrectAnswer = ( volumeOrder[ 0 ] - selection.volume );
+
+			CakeTier correctTier = selection;
+			float highestVolume = selection.volume;
+
+			for( int i = 0; i < currentCakeTiers.Count; i ++ )
+			{
+				if( currentCakeTiers[ i ].volume > highestVolume )
+				{
+					correctTier = currentCakeTiers[ i ];
+					highestVolume = correctTier.volume;
+
+				}
+			}
+			stats.CalculateDifferences( correctTier, selection );
+			stats.SaveStats();
 			return false;
 		}
 	}
@@ -317,6 +365,18 @@ public class Selection : MonoBehaviour {
 			//show final cake
 			cakePlate.rotating = true;
 		}
+//		else if( volumeOrder.Count == 1 )
+//		{
+//			//send last cake tier to cake plate
+//			CakeTier finalCakeTier = currentCakeTiers[ 0 ];
+//			finalCakeTier.positionOnCakePlate = cakePlate.TierPositionOnPlate( finalCakeTier.tierHeight );
+//			finalCakeTier.MoveToCakePlate( cakeTier cakePlate );
+//			volumeOrder.RemoveAt( 0 );
+//			currentCakeTiers.Remove( finalCakeTier );
+//			correctAnswer = true;
+//			gameManager.UpdateStatsAndLevel( correctAnswer );
+//
+//		}
 		return;
 	}
 	
